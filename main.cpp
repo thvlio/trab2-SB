@@ -1,7 +1,7 @@
 #include "header.h"
 
 // compilar com
-// g++ -std=c++11 main.cpp -o main
+// g++ -std=c++11 main.cpp -o main.out
 
 int main () {
     
@@ -14,6 +14,14 @@ int main () {
             std::string line;
             getline(asmFile, line);
             std::cout << "linha: " << line << "\n";
+            
+            std::stringstream ss (line);
+            
+            while (!ss.eof()) {
+                std::string token;
+                ss >> token;
+                std::cout << "\ttoken: " << token << "\n";
+            }
             
         }
         
