@@ -21,6 +21,11 @@ void assembleCode (std::string, std::string);
 
 /*      FUNÇÕES     */
 
+/*
+errorCheck: verifica se ha algum erro nos argumentos de entrada do programa ou no arquivo do codigo de entrada
+entrada: argc e argv recebidos pela funcao main()
+saida: um inteiro indicando se houve erro (0 se nao, -1 se sim)
+*/
 int errorCheck (int argc, char *argv[]) {
     
     if (argc != 4) {
@@ -47,6 +52,11 @@ int errorCheck (int argc, char *argv[]) {
     return 0;
 }
 
+/*
+o2pre: passa uma string com extensao '.o' para extensao '.pre'
+entrada: string com o nome original com a extensao '.o'
+saida: string com o nome alterado com a extensao '.pre'
+*/
 std::string o2pre (std::string original) {
     
     std::string altered (original);
@@ -57,6 +67,11 @@ std::string o2pre (std::string original) {
     return altered;
 }
 
+/*
+o2mcr: passa uma string com extensao '.o' para extensao '.mcr'
+entrada: string com o nome original com a extensao '.o'
+saida: string com o nome alterado com a extensao '.mcr'
+*/
 std::string o2mcr (std::string original) {
     
     std::string altered (original);
@@ -67,6 +82,13 @@ std::string o2mcr (std::string original) {
     return altered;
 }
 
+/*
+preProcessFile: faz a passagem de preprocessamento no arquivo, que inclui:
+    - passa tudo para caixa alta
+    - 
+entrada: nome do arquivo de entrada '.asm'
+saida: nome do arquivo de saida '.pre'
+*/
 void preProcessFile (std::string inFileName, std::string preFileName) {
     
     std::ifstream asmFile (inFileName);
@@ -89,6 +111,12 @@ void preProcessFile (std::string inFileName, std::string preFileName) {
     return;
 }
 
+/*
+expandMacros: faz a passagem para expandir macros no arquivo, que inclui:
+    - 
+entrada: nome do arquivo de entrada '.pre'
+saida: nome do arquivo de saida '.mcr'
+*/
 void expandMacros (std::string preFileName, std::string mcrFileName) {
     
     std::ifstream preFile (preFileName);
@@ -106,6 +134,12 @@ void expandMacros (std::string preFileName, std::string mcrFileName) {
     return;
 }
 
+/*
+assembleCode: faz a passagem de montagem no arquivo, que inclui:
+    - 
+entrada: nome do arquivo de entrada '.mcr'
+saida: nome do arquivo de saida '.o'
+*/
 void assembleCode (std::string mcrFileName, std::string outFileName) {
     
     std::ifstream mcrFile (mcrFileName);
