@@ -2,8 +2,6 @@
 
 
 
-
-
 /*      DECLARAÇÕES DAS FUNÇÕES     */
 
 int errorCheck (int, char**);
@@ -12,8 +10,6 @@ std::string o2mcr (std::string);
 void preProcessFile (std::string, std::string);
 void expandMacros (std::string, std::string);
 void assembleCode (std::string, std::string);
-
-
 
 
 
@@ -83,6 +79,7 @@ std::string o2mcr (std::string original) {
 /*
 preProcessFile: faz a passagem de preprocessamento no arquivo, que inclui:
     - passa tudo para caixa alta
+    - ignora comentarios
     - 
 entrada: nome do arquivo de entrada '.asm'
 saida: nome do arquivo de saida '.pre'
@@ -99,6 +96,10 @@ void preProcessFile (std::string inFileName, std::string preFileName) {
         
         // transforma a string p caixa alta
         std::transform (line.begin(), line.end(), line.begin(), ::toupper);
+        
+        // ignora os comentarios, se houver algum
+        std::stringstream ss (line);
+        getline(ss, line, ';');
         
         preFile << line << "\n";
     }
