@@ -1,4 +1,5 @@
-#include "header.h"
+#include "types.h"
+#include "functions.h"
 
 // compilar com
 // g++ -std=c++11 main.cpp -o main.out

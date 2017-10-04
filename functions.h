@@ -1,14 +1,10 @@
-/*      BIBLIOTECAS     */
-
-#include <iostream> // std::cout
-#include <fstream> // std::ifstream
-#include <string> // std::string
-#include <sstream> // std::stringstream
-#include <algorithm> // ::toupper
+/*      FUNCTIONS.H: arquivo contendo as definições das funções     */
 
 
 
-/*      CABEÇALHOS      */
+
+
+/*      DECLARAÇÕES DAS FUNÇÕES     */
 
 int errorCheck (int, char**);
 std::string o2pre (std::string);
@@ -19,7 +15,9 @@ void assembleCode (std::string, std::string);
 
 
 
-/*      FUNÇÕES     */
+
+
+/*      DEFINIÇÕES DAS FUNÇÕES     */
 
 /*
 errorCheck: verifica se ha algum erro nos argumentos de entrada do programa ou no arquivo do codigo de entrada
@@ -29,7 +27,7 @@ saida: um inteiro indicando se houve erro (0 se nao, -1 se sim)
 int errorCheck (int argc, char *argv[]) {
     
     if (argc != 4) {
-        std::cout << "Número inválido de argumentos: " << argc-1 << "\n";
+        std::cout << "Número inválido de argumentos: " << argc-1 << " (3 esperados)" << "\n";
         return -1;
     }
     
