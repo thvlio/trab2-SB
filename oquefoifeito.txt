@@ -1,0 +1,56 @@
+Botei aqui algumas coisas do PDF que descrevem o trabalho.
+Legenda:
+    [----] -> não foi feito
+    [++++] -> já foi feito
+
+Os identificadores de variáveis e rótulos são limitados em 100 caracteres e seguem as regras comuns do C, sendo compostos por letras, números ou o caractere _ (underscore) e com a restrição de que o primeiro caractere não pode ser um número.
+    [----]
+
+O montador deve ser capaz de:
+    - NÂO ser sensível ao caso, podendo aceitar instruções/diretivas/rótulos em maiúsculas e minúsculas.
+        [++++]
+    - NÃO ter ordem fixa para as seções de TEXT e DATA, ou seja, as seções podem estar em qualquer ordem.
+        [----]
+    - Gerar um arquivo de saída em formato TEXTO (mais detalhes serão descritos a seguir).
+        [----]
+    - Desconsiderar as tabulações, quebras de linhas e espaços desnecessários em qualquer lugar do código.
+        [----]
+    - A diretiva CONST deve aceitar números positivos e negativos (inteiros e hexadecimal).
+        [----]
+    - Deve ser possível trabalhar com vetores (SPACE com operando, e usar operações do tipo> LABEL + número).
+        [----]
+    - Capacidade de aceitar comentários indicados pelo símbolo ';'.
+        [++++]
+    - O comando COPY dvee utilizar uma vírgula e um espaço entre os operandos (COPY A, B)
+        [----]
+    - Ser capaz de aceitar MACROS (mais detalhes serão descritos a seguir).
+        [----]
+    - Pode criar um rótulo, dar quebra de linha e continuar na linha depois (o rótulo seria equivalente a linha seguinte).
+        [----]
+    - Identificar erros durante a montagem. Montando sempre o programa inteiro e mostrando na tela a(s) LINHA(s) e TIPO DOS ERROS (segundo a relação a seguir e indicar se é LÉXICO, SINTÁTICO OU SEMÂNTICO).
+        [----]
+    
+O programa deve detectar pelo menos os seguintes tipos de erro:
+    - declarações e rótulos ausentes [----]
+    - declarações e rótulos repetidos [----]
+    - pulo para rótulos inválidos [----]
+    - pulo para seção errada [----]
+    - diretivas inválidas [----]
+    - instruções inválidas [----]
+    - diretivas ou instruções na seção errada [----]
+    - divisão por zero (para constante) [----]
+    - instruções com a quantidade de operandos inválida [----]
+    - tokens inválidos [----]
+    - dois rótulos na mesma linha [----]
+    - seção TEXT faltante [----]
+    - seção inválida [----]
+    - tipo de argumento inválido [----]
+    - modificação de um valor constante [----]
+    
+Assumir que as macros vão sempre estar declaradas antes de serem chamadas e dentro da seção de texto. Assumir QUE NÃO TEM MACRO QUE CHAMA OUTRA MACRO. As macros NÃO precisam receber parâmetros (não será feito teste de macro utilizando parâmetro de entrada).
+
+O programa de tradução deve ser receber 3 (três) argumentos em linha de comando (nessa ordem e OS ARQUIVOS COM EXTENSÃO): um tipo de operação, um arquivo de entrada contendo um programa em Asssembly no formato texto (extensão ".asm") na linguagem hopotética e um arquivo de saída (extensão ".o"). Os tipos de operação são (i) preprocessamento, indicado pelo argumento "-p", coloca a extensão ".pre" no arquivo e somente avalia as diretivas EQU e IF. (ii) processamento de macros, indicado pelo argumento "-m", coloca a extensão ".mcr" no arquivo e somente avalia as diretivas EQU e IF e substitue as MACROS. (iii) montagem, indicado pelo argumento "-o", coloca a extensão "-o", realiza a montagem do programa usando o PROCESSO DE PASSAGEM ÚNICA. Como pode ser visto a saída de um tipo de operação pode ser visto como a entrada da próxima, logo o programa pode por exemplo no tipo de operação de montagem, gerar três arquivos de saída.
+
+Assumir que EQU sempre vai vir no início do programa e foras das seções de Texto e Dados. Lembrar que pode ter EQU sem IF, mas assumir que IF sempre precisa de uma declaração de EQU anterior.
+
+Todos os arquivos de saída devem estar em formato TEXTO. No caso do arquivo objeto, o arquivo de saída deve ser somente os OPCODES e operando sem quebra de linha, nem endereço indicado, mas separados por espaço.

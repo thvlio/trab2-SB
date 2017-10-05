@@ -1,6 +1,6 @@
 	TRIANGULO: ; comentario1
         EQU 1
-SECTION DATA ; comentario2
+SECTION DATA; comentario2
 	B:		SPACE
 	H:		SPACE
 	R:		SPACE

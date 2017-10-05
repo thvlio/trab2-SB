@@ -22,21 +22,39 @@ saida: um inteiro indicando se houve erro (0 se nao, -1 se sim)
 */
 int errorCheck (int argc, char *argv[]) {
     
+    // verifica o numero de argumentos dados
     if (argc != 4) {
         std::cout << "Número inválido de argumentos: " << argc-1 << " (3 esperados)" << "\n";
         return -1;
     }
     
-    std::string operation (*(argv+1));
+    // guarda os argumentos em strings
+    std::string operation (*(argv+1)),
+        inFileName (*(argv+2)),
+        outFileName (*(argv+3));
     
+    // verifica se a operacao eh valida
     if (operation != "-p" && operation != "-m" && operation != "-o") {
         std::cout << "Operação inválida: " << operation << "\n";
         return -1;
     }
     
-    std::string inFileName (*(argv+2));
-    std::ifstream asmFile (inFileName);
+    // verifica se as extensao do arquivo de entrada eh .asm
+    std::string inExt = inFileName.substr(inFileName.size() - 4);
+    if (inExt != ".asm") {
+        std::cout << "Extensão do arquivo de entrada não suportada (somente .asm)" << "\n";
+        return -1;
+    }
     
+    // verifica se as extensao do arquivo de saida eh .o
+    std::string outExt = outFileName.substr(outFileName.size() - 2);
+    if (outExt != ".o") {
+        std::cout << "Extensão do arquivo de saída não suportada (somente .o)" << "\n";
+        return -1;
+    }
+    
+    // verifica se o arquivo de entrada existe
+    std::ifstream asmFile (inFileName);
     if (!asmFile.is_open()) {
         std::cout << "Erro ao abrir o arquivo de entrada: " << inFileName << "\n";
         return -1;
@@ -80,7 +98,8 @@ std::string o2mcr (std::string original) {
 preProcessFile: faz a passagem de preprocessamento no arquivo, que inclui:
     - passa tudo para caixa alta
     - ignora comentarios
-    - 
+    - (avalia EQU e IF)
+    - (detectar erros blabla)
 entrada: nome do arquivo de entrada '.asm'
 saida: nome do arquivo de saida '.pre'
 */
@@ -98,8 +117,30 @@ void preProcessFile (std::string inFileName, std::string preFileName) {
         std::transform (line.begin(), line.end(), line.begin(), ::toupper);
         
         // ignora os comentarios, se houver algum
-        std::stringstream ss (line);
-        getline(ss, line, ';');
+        std::stringstream ss1 (line);
+        getline(ss1, line, ';');
+        
+        // stringstream para extrair os tokens da linha
+        std::stringstream ss2 (line);
+        
+        while (!ss2.eof()) {
+            std::string token;
+            ss2 >> token;
+        }
+        
+        // le os equs e anota os labels
+        // tipo, label e valor
+        // vai dando pushback num vetor e depois implementa uma busca com std::find?
+        
+        // vai lendo os labels e literalmente substituindo
+        
+        // chega nos ifs e verifica se o label tem msm
+        // se tiver e for 1, compila a linha de baixo
+        // se tiver e for 0, elimina a linha de baixo
+        // se nao tiver, nem termina de compilar
+        
+        // o codigo tem q saber se ta em algum secao, e em qual
+        // determinar de alguma forma que a linha eh de um equ
         
         preFile << line << "\n";
     }
@@ -112,7 +153,8 @@ void preProcessFile (std::string inFileName, std::string preFileName) {
 
 /*
 expandMacros: faz a passagem para expandir macros no arquivo, que inclui:
-    - 
+    - (substitui as macros)
+    - (detectar erros blabla)
 entrada: nome do arquivo de entrada '.pre'
 saida: nome do arquivo de saida '.mcr'
 */
@@ -127,6 +169,14 @@ void expandMacros (std::string preFileName, std::string mcrFileName) {
         mcrFile << line << "\n";
     }
     
+    // salva todo o trecho de codigo depois da macro
+    // sai colando por ai depois
+    
+    // tipo: le que tem macro e salva ate o endmacro
+    // ai salva como se fosse numa string, todas as linhas
+    // em um vetor, no outro salva so nome
+    // ai vai lendo macro e batendo com um vetor e puxando de outro
+    
     preFile.close();
     mcrFile.close();
     
@@ -135,7 +185,8 @@ void expandMacros (std::string preFileName, std::string mcrFileName) {
 
 /*
 assembleCode: faz a passagem de montagem no arquivo, que inclui:
-    - 
+    - (todo o processo de passagem unica)
+    - (detectar erros blabla)
 entrada: nome do arquivo de entrada '.mcr'
 saida: nome do arquivo de saida '.o'
 */
