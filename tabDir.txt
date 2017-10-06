@@ -1,0 +1,8 @@
+# nome da diretiva
+SECTION
+SPACE
+CONST
+EQU 
+IF
+MACRO
+END

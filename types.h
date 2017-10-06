@@ -32,3 +32,12 @@ struct Instr {
     // constroi a estrutura a partir de uma string, um opcode e o numero de argumentos
     Instr (std::string nm, int op, int na): name(nm), opcode(op), numArg(na) {};
 };
+
+// Dir: armazena uma diretiva e suas caracteristicas
+struct Dir {
+    // membros
+    std::string name; // nome da diretiva
+    // metodos
+    Dir () {};
+    Dir (std::string nm): name(nm) {};  
+};

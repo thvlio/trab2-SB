@@ -20,7 +20,7 @@ errorCheck: verifica se ha algum erro nos argumentos de entrada do programa ou n
 entrada: argc e argv recebidos pela funcao main()
 saida: um inteiro indicando se houve erro (0 se nao, -1 se sim)
 */
-int errorCheck (int argc, char *argv[]) {
+int errorCheck (int argc, char *argv[], std::string instrFileName, std::string dirFileName) {
     
     // verifica o numero de argumentos dados
     if (argc != 4) {
@@ -60,6 +60,22 @@ int errorCheck (int argc, char *argv[]) {
         return -1;
     } else
         asmFile.close();
+        
+    // verifica se o arquivo com a lista de instrucoes existe
+    std::ifstream instrFile (instrFileName);
+    if (!instrFile.is_open()) {
+        std::cout << "Erro ao abrir a tabela de instruções: " << instrFileName << "\n";
+        return -1;
+    } else
+        instrFile.close();
+    
+    // verifica se o arquivo com a lista de diretivas existe
+    std::ifstream dirFile (dirFileName);
+    if (!dirFile.is_open()) {
+        std::cout << "Erro ao abrir a tabela de diretivas: " << dirFileName << "\n";
+        return -1;
+    } else
+        dirFile.close();
     
     return 0;
 }
@@ -92,6 +108,67 @@ std::string o2mcr (std::string original) {
     altered.append("mcr");
     
     return altered;
+}
+
+/*
+getInstrList: constroi a tabela de instrucoes num vetor 
+entrada: nome do arquivo que contem a tabela
+saida: vetor com a lista de instrucoes
+*/
+std::vector<Instr> getInstrList (std::string instrFileName) {
+    
+    std::ifstream instrFile (instrFileName);
+    std::vector<Instr> instrList;
+    
+    while (!instrFile.eof()) {
+        
+        std::string name;
+        int opcode,
+            numArg;
+            
+        instrFile >> name;
+        // std::cout << "Name: " << name << "\n";
+        if (name != "#") {
+            instrFile >> numArg;
+            instrFile >> opcode;
+            // std::cout << "numeros: " << opcode << ", " << numArg << "\n";
+            Instr instr (name, opcode, numArg);
+            instrList.push_back(instr);
+        } else
+            getline(instrFile, name); // le o resto da linha e ignora
+    
+    }
+    
+    instrFile.close();
+    return instrList;
+}
+
+/*
+getDirList: constroi a tabela de diretivas num vetor 
+entrada: nome do arquivo que contem a tabela
+saida: vetor com a lista de diretivas
+*/
+std::vector<Dir> getDirList (std::string dirFileName) {
+    
+    std::ifstream dirFile (dirFileName);
+    std::vector<Dir> dirList;
+    
+    while (!dirFile.eof()) {
+        
+        std::string name;
+            
+        dirFile >> name;
+        // std::cout << "Name: " << name << "\n";
+        if (name != "#") {
+            Dir dir (name);
+            dirList.push_back(dir);
+        } else
+            getline(dirFile, name); // le o resto da linha e ignora
+    
+    }
+    
+    dirFile.close();
+    return dirList;
 }
 
 /*
