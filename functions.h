@@ -246,15 +246,19 @@ void preProcessFile (std::string inFileName, std::string preFileName) {
         
         std::string line = preReadLine (asmFile); // le uma linha (e corrige algumas coisas)
         
-        line = searchAndReplace (labelList, line); // procura na linha por rotulos que ja tenham sido definidos por equs
-        
         std::stringstream lineStream (line); // cria um stream para a leitura de tokens
         
         std::string token;
         lineStream >> token; // le um token
         
-        if (token.back() == ':') { // se for ':', entao ta definindo um label
+        if (token != "IF") { 
+            line = searchAndReplace (labelList, line); // procura na linha por rotulos que ja tenham sido definidos por equs
+            lineStream.str(line); // coloca a linha com os rotulos substituidos na stream
+            lineStream >> token; // rele o primeiro token para colocar o ponteiro de leitura no mesmo lugar
+        } // token != "IF" preserva o label na diretiva IF (para detectar erros)
         
+        if (token.back() == ':') { // se for ':', entao ta definindo um label
+            
             std::string token2; // pega o token seguinte
             lineStream >> token2;
             
@@ -286,13 +290,24 @@ void preProcessFile (std::string inFileName, std::string preFileName) {
             }
             
         } else if (token == "IF") {
+                        
+            std::string token2; // pega o token seguinte
+            lineStream >> token2;
             
-            int value; // le o numero seguinte (a busca ja trocou o label por um valor)
-            lineStream >> value;
+            int found = 0; // procura o token2 lido na lista de labels definidos
+            Label label;
+            for (int i = 0; ((i < labelList.size()) && (!found)); ++i) {
+                if (labelList[i].name == token2) {
+                    found = 1;
+                    label = labelList[i]; // salva o label encontrado
+                }
+            }
             
-            if (value == 0)
-                preReadLine (asmFile); // le a proxima linha do arquivo e nao salva
-            line.clear(); // limpa a linha atual, ja que era um if
+            if (found) {
+                if (label.value == 0)
+                    preReadLine (asmFile); // le a proxima linha do arquivo e nao salva
+                line.clear(); // limpa a linha atual, ja que era um if
+            }
                 
         }
             
