@@ -287,6 +287,9 @@ void preProcessFile (std::string inFileName, std::string preFileName) {
         // se o ultimo caracter for ':', entao ta definindo um rotulo
         if (token.back() == ':') {
             
+            // apaga o ':'
+            token.pop_back();
+            
             // pega o token seguinte
             std::string token2;
             lineStream >> token2;
@@ -312,7 +315,6 @@ void preProcessFile (std::string inFileName, std::string preFileName) {
                 int value;
                 lineStream >> value;
                 
-                token.pop_back(); // apaga o ':'
                 Label label (token, value); // cria o rotulo com o valor associado
                 labelList.push_back(label); // coloca o rotulo na lista de rotulos definidos
                 
@@ -385,20 +387,58 @@ void expandMacros (std::string preFileName, std::string mcrFileName) {
         // se o ultimo char for ':', esta definindo um rotulo
         if (token.back() == ':') {
             
-            // verifica se o prox token eh um 'macro'
-            // se for um macro
-                // le todas as linhas em loop ate end
-                // e ja da um clear em tudo q envolve a macro
-            // se nao for
-                // escreve a linha normal
+            // apaga o ':'
+            token.pop_back();
+            
+            // le o token seguinte
+            std::string token2;
+            lineStream >> token2;
+            
+            if (token2 == "MACRO") {
+                
+                // cria uma string p guardar a definicao da macro
+                std::string def;
+                
+                // indica se achou end indicando o final da macro
+                int reachedEnd = 0;
+                
+                // laco que vai armazenando todas as linhas ate o final da macro
+                while (!reachedEnd) {
+                    
+                    // a proxima linha eh lida
+                    std::string auxLine;
+                    getline (preFile, auxLine);
+                    
+                    if (auxLine != "END") {
+                        // se nao for o final, anexa na definicao
+                        def = def + auxLine + '\n';
+                    } else {
+                        // se for o final, ajusta a flag e tira o '\n' do final da definicao
+                        reachedEnd = 1;
+                        def.pop_back();
+                    }
+                }
+                
+                // armazena a macro na lista de macros
+                Macro macro (token, def);
+                macroList.push_back(macro);
+                
+                // nao escreve a linha que define o rotulo da macro
+                line.clear();
+                
+            }
             
         } else {
             
-            // verifica se ta chamando a macro ou nao
-            // se estiver chamando macro
-                // copia a cola a macro todinha
-            // se nao
-                // segue a vida e copia normal
+            // procura o token lido na lista de macros
+            int found = 0;
+            for (int i = 0; ((i < macroList.size()) && (!found)); ++i) {
+                if (token == macroList[i].name) {
+                    // se encontrar, escreve a definicao no lugar da linha atual
+                    line = macroList[i].def;
+                    found = 1;
+                }
+            }
             
         }
         
@@ -430,14 +470,12 @@ void assembleCode (std::string mcrFileName, std::string outFileName) {
         
         std::string line;
         getline(mcrFile, line);
-        // std::cout << "linha: " << line << "\n";
         
         std::stringstream ss (line);
         
         while (!ss.eof()) {
             std::string token;
             ss >> token;
-            // std::cout << "\ttoken: " << token << "\n";
         }
         
         outFile << line << "\n";
