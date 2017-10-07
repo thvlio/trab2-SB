@@ -41,3 +41,13 @@ struct Dir {
     Dir () {};
     Dir (std::string nm): name(nm) {};  
 };
+
+// Label: armazena um label e suas caracteristicas
+struct Label {
+    // membros
+    std::string name; // nome do label
+    int value; // definicao do label (uma linha, um endereço ou um valor)
+    // metodos
+    Label () {};
+    Label (std::string nm, int vl): name(nm), value(vl) {}; 
+};
