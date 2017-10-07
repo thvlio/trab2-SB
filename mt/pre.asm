@@ -1,7 +1,7 @@
 L1: EQU 1
 L2: 
     EQU 0
-L3: EQU 25
+L3: EQU 1
 L4:
     equ       l3
 SECTION TEXT

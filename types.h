@@ -51,3 +51,13 @@ struct Label {
     Label () {};
     Label (std::string nm, int vl): name(nm), value(vl) {}; 
 };
+
+// Macro: armazena uma macro e suas caracteristcas
+struct Macro {
+    // membros
+    std::string name; // nome da macro
+    std::string def; // definicao da macro
+    // metodos
+    Macro () {};
+    Macro (std::string nm, std::string df): name(nm), def(df) {}; 
+};
