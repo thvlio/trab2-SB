@@ -4,9 +4,13 @@
 
 /*      DECLARAÇÕES DAS FUNÇÕES     */
 
-int errorCheck (int, char**);
+int errorCheck (int, char**, std::string, std::string);
 std::string o2pre (std::string);
 std::string o2mcr (std::string);
+std::vector<Instr> getInstrList (std::string);
+std::vector<Dir> getDirList (std::string);
+std::string preReadLine (std::ifstream&);
+std::string searchAndReplace (std::vector<Label>, std::string);
 void preProcessFile (std::string, std::string);
 void expandMacros (std::string, std::string);
 void assembleCode (std::string, std::string);
@@ -172,10 +176,61 @@ std::vector<Dir> getDirList (std::string dirFileName) {
 }
 
 /*
+preReadLine: le uma linha do arquivo na etapa de preprocessamento
+entrada: stream contendo a linha a ser lida (passada por referencia)
+saida: string com os dados lidos
+*/
+std::string preReadLine (std::ifstream &input)  {
+    
+    // le uma linha do arquivo
+    std::string line;
+    getline(input, line);
+    
+    // transforma a string p caixa alta
+    std::transform (line.begin(), line.end(), line.begin(), ::toupper);
+    
+    // ignora os comentarios, se houver algum (e retira os espaços em branco)
+    std::stringstream lineStream (line);
+    getline(lineStream, line, ';');
+    
+    // retira os espaços em branco, caso existam, no final da linha
+    while (line.back() == ' ' || line.back() == '\t' || line.back() == '\n' || line.back() == '\v' || line.back() == '\f' || line.back() == '\r')
+        line.pop_back();
+    
+    // retira os espaços em branco, caso existam, no começo da linha
+    while (line.front() == ' ' || line.front() == '\t' || line.front() == '\n' || line.front() == '\v' || line.front() == '\f' || line.front() == '\r')
+        line = line.substr(1);
+    
+    return line;    
+}
+
+/*
+searchAndReplace: procura um rotulo numa linha e substitui pela definicao
+entrada: lista de rotulos definidos e a linha
+saida: nova linha alterada
+*/
+std::string searchAndReplace (std::vector<Label> list, std::string line) {
+    
+    for (int i = 0; i < list.size(); ++i) {
+        
+        // procura pelo nome do rotulo na linha
+        std::size_t pos = line.find(list[i].name);
+        
+        // se encontrar em alguma posicao, substitui pelo numero associado ao rotulo
+        if (pos != std::string::npos) {
+            line.replace (pos, list[i].name.size(), std::to_string(list[i].value));
+        }
+    }
+    
+    return line;
+    
+}
+
+/*
 preProcessFile: faz a passagem de preprocessamento no arquivo, que inclui:
     - passa tudo para caixa alta
     - ignora comentarios
-    - (avalia EQU e IF)
+    - avalia EQU e IF
     - (detectar erros blabla)
 entrada: nome do arquivo de entrada '.asm'
 saida: nome do arquivo de saida '.pre'
@@ -184,42 +239,66 @@ void preProcessFile (std::string inFileName, std::string preFileName) {
     
     std::ifstream asmFile (inFileName);
     std::ofstream preFile (preFileName);
+    
+    std::vector<Label> labelList;
 
     while (!asmFile.eof()) {
         
-        std::string line;
-        getline(asmFile, line);
+        std::string line = preReadLine (asmFile); // le uma linha (e corrige algumas coisas)
         
-        // transforma a string p caixa alta
-        std::transform (line.begin(), line.end(), line.begin(), ::toupper);
+        line = searchAndReplace (labelList, line); // procura na linha por rotulos que ja tenham sido definidos por equs
         
-        // ignora os comentarios, se houver algum
-        std::stringstream ss1 (line);
-        getline(ss1, line, ';');
+        std::stringstream lineStream (line); // cria um stream para a leitura de tokens
         
-        // stringstream para extrair os tokens da linha
-        std::stringstream ss2 (line);
+        std::string token;
+        lineStream >> token; // le um token
         
-        while (!ss2.eof()) {
-            std::string token;
-            ss2 >> token;
+        if (token.back() == ':') { // se for ':', entao ta definindo um label
+        
+            std::string token2; // pega o token seguinte
+            lineStream >> token2;
+            
+            if (token2.empty()) {
+                
+                // se token2 estiver vazio, anexa a proxima linha
+                std::string nextLine = preReadLine (asmFile);
+                nextLine = searchAndReplace (labelList, nextLine);
+                line = line + " " + nextLine;
+                
+                // e corrige a stream da linha
+                lineStream.str(nextLine); // salva a linha anexada como stream
+                lineStream.clear(); // limpa as flags de estado
+                lineStream >> token2; // le token2 de novo
+                
+            }
+            
+            if (token2 == "EQU") { // se for equ, pega o valor seguinte e associa o valor ao label
+                
+                int value;
+                lineStream >> value;
+                
+                token.pop_back(); // apaga o ':'
+                Label label (token, value); // cria o label com o valor associado
+                labelList.push_back(label); // coloca o label na lista de labels definidos
+                
+                line.clear(); // esvazia a string p nao salvar a linha do equ no codigo
+                
+            }
+            
+        } else if (token == "IF") {
+            
+            int value; // le o numero seguinte (a busca ja trocou o label por um valor)
+            lineStream >> value;
+            
+            if (value == 0)
+                preReadLine (asmFile); // le a proxima linha do arquivo e nao salva
+            line.clear(); // limpa a linha atual, ja que era um if
+                
         }
-        
-        // le os equs e anota os labels
-        // tipo, label e valor
-        // vai dando pushback num vetor e depois implementa uma busca com std::find?
-        
-        // vai lendo os labels e literalmente substituindo
-        
-        // chega nos ifs e verifica se o label tem msm
-        // se tiver e for 1, compila a linha de baixo
-        // se tiver e for 0, elimina a linha de baixo
-        // se nao tiver, nem termina de compilar
-        
-        // o codigo tem q saber se ta em algum secao, e em qual
-        // determinar de alguma forma que a linha eh de um equ
-        
-        preFile << line << "\n";
+            
+        // se a linha nao estiver vazia, copia no arquivo '.pre'        
+        if (!line.empty())
+            preFile << line << "\n";
     }
     
     asmFile.close();
