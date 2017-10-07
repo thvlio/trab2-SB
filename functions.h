@@ -4,15 +4,22 @@
 
 /*      DECLARAÇÕES DAS FUNÇÕES     */
 
+// funções gerais
 int errorCheck (int, char**, std::string, std::string);
 std::string o2pre (std::string);
 std::string o2mcr (std::string);
 std::vector<Instr> getInstrList (std::string);
 std::vector<Dir> getDirList (std::string);
+
+// funções de preprocessamento
 std::string preReadLine (std::ifstream&);
 std::string searchAndReplace (std::vector<Label>, std::string);
 void preProcessFile (std::string, std::string);
+
+// funções de processamento de macros
 void expandMacros (std::string, std::string);
+
+// funções de montagem
 void assembleCode (std::string, std::string);
 
 
@@ -121,26 +128,37 @@ saida: vetor com a lista de instrucoes
 */
 std::vector<Instr> getInstrList (std::string instrFileName) {
     
+    // abre o arquivo
     std::ifstream instrFile (instrFileName);
+    
+    // cria uma lista de instrucoes
     std::vector<Instr> instrList;
     
     while (!instrFile.eof()) {
         
-        std::string name;
-        int opcode,
-            numArg;
-            
+        std::string name; // nome da instrucao
+        int opcode, // opcode
+            numArg; // num de operandos
+        
+        // le o nome da instrucao
         instrFile >> name;
-        // std::cout << "Name: " << name << "\n";
+        
+        // '#' serve para indicar "comentarios" 
         if (name != "#") {
+            
+            // le o num de operandos e o opcode
             instrFile >> numArg;
             instrFile >> opcode;
-            // std::cout << "numeros: " << opcode << ", " << numArg << "\n";
+            
+            // cria uma instrucao com essas caracteristicas e salva no vetor
             Instr instr (name, opcode, numArg);
             instrList.push_back(instr);
-        } else
-            getline(instrFile, name); // le o resto da linha e ignora
-    
+            
+        } else {
+            // le o resto da linha e ignora
+            getline(instrFile, name);
+        }
+            
     }
     
     instrFile.close();
@@ -154,16 +172,18 @@ saida: vetor com a lista de diretivas
 */
 std::vector<Dir> getDirList (std::string dirFileName) {
     
+    // abre o arquivo e cria uma lista de diretivas vazia
     std::ifstream dirFile (dirFileName);
     std::vector<Dir> dirList;
     
     while (!dirFile.eof()) {
         
         std::string name;
-            
         dirFile >> name;
-        // std::cout << "Name: " << name << "\n";
+        
+        // novamente, '#' indica "comentarios"
         if (name != "#") {
+            // cria uma diretiva e salva no vetor
             Dir dir (name);
             dirList.push_back(dir);
         } else
@@ -244,27 +264,37 @@ void preProcessFile (std::string inFileName, std::string preFileName) {
 
     while (!asmFile.eof()) {
         
-        std::string line = preReadLine (asmFile); // le uma linha (e corrige algumas coisas)
+        // le uma linha (e corrige algumas coisas)
+        std::string line = preReadLine (asmFile);
         
-        std::stringstream lineStream (line); // cria um stream para a leitura de tokens
+        // cria um stream para a leitura de tokens
+        std::stringstream lineStream (line);
         
+        // cria a string token e le um token
         std::string token;
-        lineStream >> token; // le um token
+        lineStream >> token;
         
-        if (token != "IF") { 
-            line = searchAndReplace (labelList, line); // procura na linha por rotulos que ja tenham sido definidos por equs
-            lineStream.str(line); // coloca a linha com os rotulos substituidos na stream
-            lineStream >> token; // rele o primeiro token para colocar o ponteiro de leitura no mesmo lugar
-        } // token != "IF" preserva o label na diretiva IF (para detectar erros)
+        // token != "IF" preserva o rotulo na diretiva IF (para detectar erros)
+        if (token != "IF") {
+            // procura na linha por rotulos que ja tenham sido definidos por equs
+            line = searchAndReplace (labelList, line); 
+            // coloca a linha com os rotulos substituidos na stream
+            lineStream.str(line); 
+            // rele o primeiro token para colocar o ponteiro de leitura no mesmo lugar
+            lineStream >> token;
+        }
         
-        if (token.back() == ':') { // se for ':', entao ta definindo um label
+        // se o ultimo caracter for ':', entao ta definindo um rotulo
+        if (token.back() == ':') {
             
-            std::string token2; // pega o token seguinte
+            // pega o token seguinte
+            std::string token2;
             lineStream >> token2;
             
+            // se token2 estiver vazio, anexa a proxima linha
             if (token2.empty()) {
                 
-                // se token2 estiver vazio, anexa a proxima linha
+                // le e anexa à linha atual a proxima linha
                 std::string nextLine = preReadLine (asmFile);
                 nextLine = searchAndReplace (labelList, nextLine);
                 line = line + " " + nextLine;
@@ -276,35 +306,40 @@ void preProcessFile (std::string inFileName, std::string preFileName) {
                 
             }
             
-            if (token2 == "EQU") { // se for equ, pega o valor seguinte e associa o valor ao label
+            // se for equ, pega o valor seguinte e associa o valor ao rotulo
+            if (token2 == "EQU") {
                 
                 int value;
                 lineStream >> value;
                 
                 token.pop_back(); // apaga o ':'
-                Label label (token, value); // cria o label com o valor associado
-                labelList.push_back(label); // coloca o label na lista de labels definidos
+                Label label (token, value); // cria o rotulo com o valor associado
+                labelList.push_back(label); // coloca o rotulo na lista de rotulos definidos
                 
-                line.clear(); // esvazia a string p nao salvar a linha do equ no codigo
+                // esvazia a string p nao salvar a linha do equ no codigo
+                line.clear();
                 
             }
             
         } else if (token == "IF") {
                         
-            std::string token2; // pega o token seguinte
+            // pega o token seguinte
+            std::string token2; 
             lineStream >> token2;
             
-            int found = 0; // procura o token2 lido na lista de labels definidos
+            // procura o token2 lido na lista de rotulos definidos
+            int found = 0; 
             Label label;
             for (int i = 0; ((i < labelList.size()) && (!found)); ++i) {
                 if (labelList[i].name == token2) {
                     found = 1;
-                    label = labelList[i]; // salva o label encontrado
+                    label = labelList[i]; // salva o rotulo encontrado
                 }
             }
             
+            // se encontrou o rotulo, executa a diretiva
             if (found) {
-                if (label.value == 0)
+                if (label.value != 1)
                     preReadLine (asmFile); // le a proxima linha do arquivo e nao salva
                 line.clear(); // limpa a linha atual, ja que era um if
             }
@@ -334,19 +369,44 @@ void expandMacros (std::string preFileName, std::string mcrFileName) {
     std::ifstream preFile (preFileName);
     std::ofstream mcrFile (mcrFileName);
 
+    std::vector<Macro> macroList;
+    
     while (!preFile.eof()) {
-        std::string line;
+        
+        // le uma linha do arquivo
+        std::string line; 
         getline(preFile, line);
-        mcrFile << line << "\n";
+        
+        // cria o stream para a linha e le um token
+        std::stringstream lineStream (line); 
+        std::string token;
+        lineStream >> token;
+        
+        // se o ultimo char for ':', esta definindo um rotulo
+        if (token.back() == ':') {
+            
+            // verifica se o prox token eh um 'macro'
+            // se for um macro
+                // le todas as linhas em loop ate end
+                // e ja da um clear em tudo q envolve a macro
+            // se nao for
+                // escreve a linha normal
+            
+        } else {
+            
+            // verifica se ta chamando a macro ou nao
+            // se estiver chamando macro
+                // copia a cola a macro todinha
+            // se nao
+                // segue a vida e copia normal
+            
+        }
+        
+        // se a linha nao estiver vazia, copia no arquivo '.mcr'        
+        if (!line.empty())
+            mcrFile << line << "\n";
+        
     }
-    
-    // salva todo o trecho de codigo depois da macro
-    // sai colando por ai depois
-    
-    // tipo: le que tem macro e salva ate o endmacro
-    // ai salva como se fosse numa string, todas as linhas
-    // em um vetor, no outro salva so nome
-    // ai vai lendo macro e batendo com um vetor e puxando de outro
     
     preFile.close();
     mcrFile.close();
