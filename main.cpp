@@ -3,6 +3,7 @@
 
 // compilar com
 // g++ -std=c++11 main.cpp -o main.out
+// ou entao com CTRL SHIFT B no VSCODE
 
 // rodar com
 // ./main.out -x xxx.asm yyy.o
