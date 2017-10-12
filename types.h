@@ -15,7 +15,10 @@
 /*      DECLARAÇÕES DOS TIPOS       */
 
 struct Instr;
-
+struct Dir;
+struct Label;
+struct Macro;
+struct simbTable;
 
 
 /*      DEFINIÇÕES DOS TIPOS        */
@@ -60,4 +63,15 @@ struct Macro {
     // metodos
     Macro () {};
     Macro (std::string nm, std::string df): name(nm), def(df) {}; 
+};
+
+struct simbTable{
+    //membros
+    std::string label;
+    int value;
+    bool def;
+    int list;
+    //metodos
+    simbTable () {};
+    simbTable (std:: string lb, int vl, bool df, int lt): label(lb), value(vl), def(df), list(lt) {};
 };
