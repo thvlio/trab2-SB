@@ -4,12 +4,10 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "taskName": "Compile (g++)",
+            "taskName": "Compilation (g++)",
             "type": "shell",
             "command": "g++",
-            "args": [
-                "-std=c++11", "main.cpp", "-o", "main.out"
-            ],
+            "args": ["-std=c++11", "main.cpp", "-o", "main.out"],
             "group": {
                 "kind": "build",
                 "isDefault": true
