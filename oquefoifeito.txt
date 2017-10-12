@@ -14,7 +14,7 @@ O montador deve ser capaz de:
     - Gerar um arquivo de saída em formato TEXTO (mais detalhes serão descritos a seguir).
         [----]
     - Desconsiderar as tabulações, quebras de linhas e espaços desnecessários em qualquer lugar do código.
-        [----]
+        [++++]
     - A diretiva CONST deve aceitar números positivos e negativos (inteiros e hexadecimal).
         [----]
     - Deve ser possível trabalhar com vetores (SPACE com operando, e usar operações do tipo> LABEL + número).
@@ -26,7 +26,7 @@ O montador deve ser capaz de:
     - Ser capaz de aceitar MACROS (mais detalhes serão descritos a seguir).
         [----]
     - Pode criar um rótulo, dar quebra de linha e continuar na linha depois (o rótulo seria equivalente a linha seguinte).
-        [----]
+        [++++]
     - Identificar erros durante a montagem. Montando sempre o programa inteiro e mostrando na tela a(s) LINHA(s) e TIPO DOS ERROS (segundo a relação a seguir e indicar se é LÉXICO, SINTÁTICO OU SEMÂNTICO).
         [----]
     

@@ -1,5 +1,8 @@
 #include "types.h"
-#include "functions.h"
+#include "common.h"
+#include "pre.h"
+#include "mcr.h"
+#include "asm.h"
 
 // compilar com
 // g++ -std=c++11 main.cpp -o main.out

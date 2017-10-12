@@ -45,26 +45,30 @@ struct Dir {
     Dir (std::string nm): name(nm) {};  
 };
 
-// Label: armazena um label e suas caracteristicas
+// Label: armazena um rotulo e suas caracteristicas
 struct Label {
     // membros
-    std::string name; // nome do label
-    int value; // definicao do label (uma linha, um endereço ou um valor)
+    std::string name; // nome do rotulo
+    int value; // definicao do rotulo (uma linha, um endereço ou um valor)
+    int defined; // se o rotulo ja foi ou nao definido
+    int defition; // indica o proximo endereço na lista de pendencias
     // metodos
     Label () {};
-    Label (std::string nm, int vl): name(nm), value(vl) {}; 
+    Label (std::string nm, int vl): name(nm), value(vl) {};
+    Label (std::string nm, int vl, int dfd, int dft): name(nm), value(vl), defined(dfd), defition(dft) {};
 };
 
 // Macro: armazena uma macro e suas caracteristcas
 struct Macro {
     // membros
     std::string name; // nome da macro
-    std::string def; // definicao da macro
+    std::string definition; // definicao da macro
     // metodos
     Macro () {};
-    Macro (std::string nm, std::string df): name(nm), def(df) {}; 
+    Macro (std::string nm, std::string df): name(nm), definition(df) {}; 
 };
 
+// a struct Label ja implementa estas informacoes, nao?
 struct Simbolo{
     //membros
     std::string label;
