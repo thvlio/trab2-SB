@@ -8,7 +8,7 @@ std::string o2pre (std::string);
 std::string o2mcr (std::string);
 std::vector<Instr> getInstrList (std::string);
 std::vector<Dir> getDirList (std::string);
-void scanner (std::string&, std::stringstream&);
+int integerCheck (std::string&, int&);
 
 
 
@@ -184,16 +184,17 @@ std::vector<Dir> getDirList (std::string dirFileName) {
 }
 
 /*
-scanner: extrai e processa um token de uma linha
-entrada: token a ser lido e stream da linha atual
-saida: nenhuma (token dado por referência)
+integerCheck: checa se a string pode ser convertida em um numero sem erros
+entrada: string a ser convertida e inteiro que armazenará o resultado
+saida: inteiro que determina se houve ou não erro na conversão
 */
-void scanner (std::string &token, std::stringstream &lineStream) {
+int integerCheck (std::string &value, int &conv) {
     
-    // extrai o token da linha
-    lineStream >> token;
+    char *ptr; // ponteiro para um caracter
+    const char *cValue = value.c_str(); // array de caracteres equivalente à string
+    conv = strtol(cValue, &ptr, 10); // converte o array para um numero e altera ptr para o ultimo caracter lido
     
-    // verifica o tamanho e os caracteres
-    // exibe mensagens de erro caso de ruim aqui
-
+    // se o ultimo caracter lido foi um '\0', entao a string foi convertida em um numero sem nenhum problema
+    return (*ptr == '\0'); 
+    
 }

@@ -88,14 +88,14 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
     // cria o stream para a linha e le um token
     std::stringstream lineStream (line);
     std::string token;
-    scanner (token, lineStream);
+    lineStream >> token;
     
     // se o ultimo char for ':', esta definindo um rotulo
     if (token.back() == ':') {
         
         // le o token seguinte
         std::string token2;
-        scanner (token2, lineStream);
+        lineStream >> token2;
         
         // se for uma diretiva de macro, cria uma macro nova na lista
         if (token2 == "MACRO")

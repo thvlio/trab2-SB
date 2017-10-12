@@ -82,12 +82,22 @@ saida: nenhuma (lista de rotulos alterada por referencia)
 void equCommand (std::string &line, std::stringstream &lineStream, std::vector<Label> &labelList, std::string &token) {
     
     // le o valor a ser substituido
-    int value;
+    std::string value;
     lineStream >> value;
     
-    token.pop_back(); // apaga o ':'
-    Label label (token, value); // cria o rotulo com o valor associado
-    labelList.push_back(label); // coloca o rotulo na lista de rotulos definidos
+    // tenta converter o numero para um inteiro
+    int conv;
+    int isInt = integerCheck (value, conv);
+    
+    // se conseguiu, cria o rotulo e coloca na lista
+    if (isInt) {
+        token.pop_back(); // apaga o ':'
+        Label label (token, conv); // cria o rotulo com o valor associado
+        labelList.push_back(label); // coloca o rotulo na lista de rotulos definidos
+    }
+    
+    // se nao tiver conseguido, tem q dar erro
+    // atualmente, ele simplesmente nao cria o rotulo se der erro
     
     // esvazia a string p nao salvar a linha do equ no codigo
     line.clear();
@@ -104,11 +114,22 @@ saida: nenhuma (linha alterada por referencia)
 void ifCommand (std::string &line, std::stringstream &lineStream, std::ifstream &asmFile) {
     
     // le o numero seguinte (a busca ja trocou o rotulo por um valor)
-    int value;
+    std::string value;
     lineStream >> value;
-
-    if (value != 1)
-        getline (asmFile, line); // le a proxima linha do arquivo (que vai ser descartada logo em seguida)
+    
+    // tenta converter o numero para um inteiro
+    int conv;
+    int isInt = integerCheck (value, conv);
+    
+    // se conseguiu, executa a diretiva
+    if (isInt) {
+        if (value != 1)
+            getline (asmFile, line); // le a proxima linha do arquivo (que vai ser descartada logo em seguida)
+    }
+    
+    // se nao conseguir transformar p numero, deveria dar erro
+    // por enquanto, um erro eh equivalente à IF 1, entao ele mantem a linha de baixo
+    
     line.clear(); // limpa a linha atual, ja que era um if
     
 }
@@ -128,21 +149,21 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
     // cria um stream para a leitura de tokens
     std::stringstream lineStream (line);
     
-    // pede para o scanner do preprocessamento um token
+    // le um token da linha
     std::string token;
-    scanner (token, lineStream);
+    lineStream >> token;
     
     // se o ultimo caracter for ':', entao ta definindo um rotulo
     if (token.back() == ':') {
         
         // pega o token seguinte
         std::string token2;
-        scanner (token2, lineStream);
+        lineStream >> token2;
         
         // se token2 estiver vazio, anexa a proxima linha
         if (token2.empty()) {
             appendNextLine (line, lineStream, asmFile, labelList);
-            scanner (token2, lineStream); // pega o token correto
+            lineStream >> token2; // pega o token correto
         }
         
         // se for equ, salva o valor associado ao rotulo na lista
