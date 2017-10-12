@@ -3,7 +3,7 @@
     // for the documentation about the tasks.json format
     "version": "0.1.0",
     "command": "g++",
-    "isShellCommand": true,
+    "isShellCommand": false,
     "args": [
         "-std=c++11",
         "main.cpp",
