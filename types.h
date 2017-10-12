@@ -18,7 +18,7 @@ struct Instr;
 struct Dir;
 struct Label;
 struct Macro;
-struct simbTable;
+struct Simbolo;
 
 
 /*      DEFINIÇÕES DOS TIPOS        */
@@ -65,13 +65,13 @@ struct Macro {
     Macro (std::string nm, std::string df): name(nm), def(df) {}; 
 };
 
-struct simbTable{
+struct Simbolo{
     //membros
     std::string label;
     int value;
     bool def;
     int list;
     //metodos
-    simbTable () {};
-    simbTable (std:: string lb, int vl, bool df, int lt): label(lb), value(vl), def(df), list(lt) {};
+    Simbolo () {};
+    Simbolo (std:: string lb, int vl, bool df, int lt): label(lb), value(vl), def(df), list(lt) {};
 };
