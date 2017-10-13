@@ -4,7 +4,7 @@
 
 /*      DECLARAÇÕES DAS FUNÇÕES      */
 int constCheck (std::string&, int&);
-void assembleCode (std::string, std::string, std::vector<int> &lineDict);
+void assembleCode (std::string, std::string, std::vector<int>&);
 
 
 
@@ -55,7 +55,7 @@ assembleCode: faz a passagem de montagem no arquivo, que inclui:
 entrada: nome do arquivo de entrada '.mcr'
 saida: nome do arquivo de saida '.o'
 */
-void assembleCode (std::string mcrFileName, std::string outFileName) {
+void assembleCode (std::string mcrFileName, std::string outFileName, std::vector<int> &lineDict) {
     
     std::ifstream mcrFile (mcrFileName);
     std::ofstream outFile (outFileName);

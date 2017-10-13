@@ -6,7 +6,7 @@
 void createMacro (std::string&, std::ifstream&, std::string&, std::vector<Macro>&, int&);
 void mcrSearchAndReplace (std::string&, std::string&, std::vector<Macro>&, int&);
 void mcrParser (std::string&, std::ifstream&, std::vector<Macro>&, int&, int&);
-int expandMacros (std::string, std::string, std::vector<int>&);
+int expandMacros (std::string, std::string, std::vector<int>&, std::vector<int>&);
 
 
 
@@ -122,7 +122,7 @@ expandMacros: faz a passagem para expandir macros no arquivo, que inclui:
 entrada: nome do arquivo de entrada '.pre', nome do arquivo de saida '.mcr' e dicionario de linhas
 saida: inteiro representando a ocorrencia de erro
 */
-int expandMacros (std::string preFileName, std::string mcrFileName, std::vector<int> &lineDict) {
+int expandMacros (std::string preFileName, std::string mcrFileName, std::vector<int> &lineDictMcr, std::vector<int> &lineDictPre) {
     
     std::ifstream preFile (preFileName);
     std::ofstream mcrFile (mcrFileName);
@@ -147,9 +147,9 @@ int expandMacros (std::string preFileName, std::string mcrFileName, std::vector<
             if (macroCall > -1) {
                 Macro macro = macroList[macroCall];
                 for (int i = macro.initLine; i < macro.initLine+macro.numLines; ++i)
-                    lineDict.push_back(i);
+                    lineDictMcr.push_back(i);
             } else
-                lineDict.push_back(lineCounter);
+                lineDictMcr.push_back(lineCounter);
         }
         
         lineCounter++;

@@ -1,5 +1,8 @@
-L1: EQU 1
-L2: EQU 0
+L1:
+
+	EQU 1
+L2:
+	EQU 0
 
 SECTION TEXT
 MUL_N:
