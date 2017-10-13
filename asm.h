@@ -4,7 +4,7 @@
 
 /*      DECLARAÇÕES DAS FUNÇÕES      */
 int constCheck (std::string&, int&);
-void assembleCode (std::string, std::string);
+void assembleCode (std::string, std::string, std::vector<int> &lineDict);
 
 
 

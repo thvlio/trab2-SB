@@ -63,9 +63,11 @@ struct Macro {
     // membros
     std::string name; // nome da macro
     std::string definition; // definicao da macro
+    int initLine; // linha inicial da macro
+    int numLines; // quantas linhas tem a macro
     // metodos
     Macro () {};
-    Macro (std::string nm, std::string df): name(nm), definition(df) {}; 
+    Macro (std::string nm, std::string df, int ln, int nl): name(nm), definition(df), initLine(ln), numLines(nl) {};
 };
 
 // a struct Label ja implementa estas informacoes, nao?

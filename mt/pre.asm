@@ -15,9 +15,9 @@ ADD L4
 SECTION DATA
 N: SPACE
 
-;arquivo de saida pre-processado:
+;arquivo do saida pre-processado:
 ;SECTION TEXT
 ;LOAD SPACE
-;
+;ADD 1
 ;SECTION DATA
 ;N: SPACE

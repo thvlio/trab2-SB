@@ -34,17 +34,29 @@ int main (int argc, char *argv[]) {
     std::string preFileName (o2pre(outFileName)),
         mcrFileName (o2mcr(outFileName));
     
+    // cria o dicionario de linhas para o preprocessamento, para a passagem de macros e o dicionario composto dos dois
+    // o indice representa a linha atual, e o valor no indice é a linha original
+    std::vector<int> lineDictPre;
+    std::vector<int> lineDictMcr;
+    std::vector<int> lineDict;
+    
     // passagem de pre processamento
     if (operation == "-p" || operation == "-m" || operation == "-o")
-        preProcessFile (inFileName, preFileName);
-        
+        preProcessFile (inFileName, preFileName, lineDictPre);
+    
     // passagem de macros
     if (operation == "-m" || operation == "-o")
-        expandMacros (preFileName, mcrFileName);
+        expandMacros (preFileName, mcrFileName, lineDictMcr);
     
+    // faz o dicionario "composto"
+    for (int i = 0; i < lineDictMcr.size(); ++i) {
+        lineDict.push_back(lineDictPre[lineDictMcr[i]-1]);
+        // std::cout << ".mcr line: " << i+1 << ", .pre line: " << lineDictMcr[i] << ", .asm line: " << lineDictPre[lineDictMcr[i]-1] << "\n";
+    }
+        
     // passagem normal
     if (operation == "-o")
-        assembleCode (mcrFileName, outFileName);
+        assembleCode (mcrFileName, outFileName, lineDict);
     
     return 0;
     

@@ -6,9 +6,9 @@
 void preReadLine (std::string&, std::ifstream&, std::vector<Label>&);
 void appendNextLine (std::string&, std::stringstream&, std::ifstream&, std::vector<Label>&);
 void equCommand (std::string&, std::stringstream&, std::vector<Label>&, std::string&);
-void ifCommand (std::string&, std::stringstream&, std::ifstream&);
-void preParser (std::string&, std::ifstream&, std::vector<Label>&);
-
+void ifCommand (std::string&, std::stringstream&, std::ifstream&, int&);
+void preParser (std::string&, std::ifstream&, std::vector<Label>&, int&);
+int preProcessFile (std::string, std::string, std::vector<int>&);
 
 
 /*      DEFINIÇÕES DAS FUNÇÕES      */
@@ -108,10 +108,10 @@ void equCommand (std::string &line, std::stringstream &lineStream, std::vector<L
 
 /*
 ifCommand: se o valor do if for 1, compila a linha abaixo, senao esvazia a linha
-entrada: linha atual, stream da linha atual e stream do arquivo de entrada
-saida: nenhuma (linha alterada por referencia)
+entrada: linha atual, stream da linha atual, stream do arquivo de entrada e contador de linhas
+saida: nenhuma (linha e contador de linhas alterados por referencia)
 */
-void ifCommand (std::string &line, std::stringstream &lineStream, std::ifstream &asmFile) {
+void ifCommand (std::string &line, std::stringstream &lineStream, std::ifstream &asmFile, int &lineCounter) {
     
     // le o numero seguinte (a busca ja trocou o rotulo por um valor)
     std::string value;
@@ -123,8 +123,10 @@ void ifCommand (std::string &line, std::stringstream &lineStream, std::ifstream 
     
     // se conseguiu, executa a diretiva
     if (isInt) {
-        if (value != 1)
+        if (conv != 1) {
             getline (asmFile, line); // le a proxima linha do arquivo (que vai ser descartada logo em seguida)
+            lineCounter++; // pula uma linha
+        }
     }
     
     // se nao conseguir transformar p numero, deveria dar erro
@@ -138,10 +140,10 @@ void ifCommand (std::string &line, std::stringstream &lineStream, std::ifstream 
 
 /*
 preParser: processa uma linha do arquivo fonte
-entrada: linha atual, stream do arquivo de entrada e lista de rotulos
-saida: nenhuma (linha lida devolvida por referência)
+entrada: linha atual, stream do arquivo de entrada, a lista de rotulos e o contador de linhas
+saida: nenhuma (linha lida e contador de linhas alterados por referência)
 */
-void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &labelList) {
+void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &labelList, int &lineCounter) {
     
     // le uma linha, corrige algumas coisas e procura na linha por rotulos que ja tenham sido definidos por equs
     preReadLine (line, asmFile, labelList);
@@ -164,6 +166,7 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
         if (token2.empty()) {
             appendNextLine (line, lineStream, asmFile, labelList);
             lineStream >> token2; // pega o token correto
+            lineCounter++;
         }
         
         // se for equ, salva o valor associado ao rotulo na lista
@@ -171,7 +174,7 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
             equCommand (line, lineStream, labelList, token);
         
     } else if (token == "IF")
-        ifCommand (line, lineStream, asmFile);
+        ifCommand (line, lineStream, asmFile, lineCounter);
 }
 
 
@@ -182,29 +185,36 @@ preProcessFile: faz a passagem de preprocessamento no arquivo, que inclui:
     - ignora comentarios
     - avalia EQU e IF
     - (detectar erros)
-entrada: nome do arquivo de entrada '.asm'
-saida: nome do arquivo de saida '.pre'
+entrada: nome do arquivo de entrada '.asm', nome do arquivo de saida '.pre' e dicionario de linhas
+saida: inteiro indicando se houve erros
 */
-void preProcessFile (std::string inFileName, std::string preFileName) {
+int preProcessFile (std::string inFileName, std::string preFileName, std::vector<int> &lineDict) {
     
     std::ifstream asmFile (inFileName);
     std::ofstream preFile (preFileName);
     
     std::vector<Label> labelList;
+    
+    int lineCounter = 1;
 
     while (!asmFile.eof()) {
         
         // chama o parser especifico do preprocessamento        
         std::string line;
-        preParser(line, asmFile, labelList);
+        preParser(line, asmFile, labelList, lineCounter);
             
         // se a linha nao retornar vazia, copia no arquivo '.pre'        
-        if (!line.empty())
+        if (!line.empty()) {
             preFile << line << "\n";
+            lineDict.push_back(lineCounter);
+        }
+        
+        lineCounter++;
     }
     
     asmFile.close();
     preFile.close();
     
-    return;
+    // futuramente, indicara erros no valor de retorno
+    return 0;
 }
