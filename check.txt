@@ -4,7 +4,7 @@ Legenda:
     [++++] -> já foi feito
 
 Os identificadores de variáveis e rótulos são limitados em 100 caracteres e seguem as regras comuns do C, sendo compostos por letras, números ou o caractere _ (underscore) e com a restrição de que o primeiro caractere não pode ser um número.
-    [----]
+    [++++]
 
 O montador deve ser capaz de:
     - NÂO ser sensível ao caso, podendo aceitar instruções/diretivas/rótulos em maiúsculas e minúsculas.

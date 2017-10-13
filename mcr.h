@@ -49,7 +49,6 @@ void createMacro (std::string &line, std::ifstream &preFile, std::string &token,
     }
     
     // armazena a macro na lista de macros
-    token.pop_back();
     Macro macro (token, definition, initLine, numLines);
     macroList.push_back(macro);
     
@@ -104,8 +103,22 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
         lineStream >> token2;
         
         // se for uma diretiva de macro, cria uma macro nova na lista
-        if (token2 == "MACRO")
+        if (token2 == "MACRO") {
+            
+            // verifica se o rótulo é válido
+            token.pop_back();
+            int valid = labelCheck(token);
+            if (valid == -1)
+                reportError("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineCounter);
+            else if (valid == -2)
+                reportError("rótulos não podem começar com números", "léxico", lineCounter);
+            else if (valid == -3)
+                reportError("caracter inválido encontrado no rótulo", "léxico", lineCounter);
+            
+            // cria uma macro na lista
             createMacro (line, preFile, token, macroList, lineCounter);
+            
+        }
     
     // se nao for definicao de rotulo, eh uma linha que pode ou nao estar chamando uma macro
     } else

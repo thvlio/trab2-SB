@@ -227,5 +227,24 @@ void reportError (std::string message, std::string type, int line) {
 /*
 labelCheck: verifica se o rotulo eh valido
 entrada: rotulo a ser verificado
-saida: retorna 1 se eh valido
+saida: inteiro indicando se rotulo é válido
 */
+int labelCheck (std::string label) {
+    
+    // checa o tamanho da string
+    if (label.size() > 100)
+        return -1;
+
+    // checa se o primeiro caracter é um número
+    if (label.front() >= '0' && label.front() <= '9')
+        return -2;
+    
+    // verifica se só existem números, caracteres ou _ na string
+    for (int i = 0; i < label.size(); ++i) {
+        if ((label[i] < 'A' || label[i] > 'Z') && (label[i] < '0' || label[i] > '9') && (label[i] != '_'))
+            return -3; 
+    }
+        
+    return 0;
+
+}

@@ -48,6 +48,8 @@ int constCheck (std::string &value, int &conv) {
     
 }
 
+
+
 /*
 assembleCode: faz a passagem de montagem no arquivo, que inclui:
     - (todo o processo de passagem unica)
@@ -59,11 +61,35 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     
     std::ifstream mcrFile (mcrFileName);
     std::ofstream outFile (outFileName);
-
+    
+    std::vector<Label> labelList;
+    
+    int lineCounter = 1;
+    
     while (!mcrFile.eof()) {
         
         std::string line;
         getline (mcrFile, line);
+        std::stringstream lineStream (line);
+        
+        std::string token;
+        lineStream >> token;
+        
+        if (token.back() == ':') {
+            // tem um label
+            // coloca o label na tabela de simbolos e procura por erros
+            // simbolo repetido, labelcheck
+            // agora cata mais um token
+        }
+        
+        // analisar o primeiro token e ver se eh instrucao ou diretiva
+            // procurar na tabela de instrucoes e diretivas
+        
+        // se for const space ou section cada um faz uma coisa
+            // depois q fizer o q tem q fazer vai pra proxima linha
+            
+        // se for instrucao verificar quantos argumentos e tal, e ler da linha
+        
         outFile << line;
         // algoritmo de passagem unica
     }

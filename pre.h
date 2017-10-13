@@ -87,7 +87,6 @@ int equCommand (std::string &line, std::stringstream &lineStream, std::vector<La
     std::string equ;
     lineStream >> equ;
     
-    token.pop_back(); // apaga o ':'
     Label label (token, equ); // cria o rotulo com o valor associado
     labelList.push_back(label); // coloca o rotulo na lista de rotulos definidos
         
@@ -154,8 +153,6 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
     // se o ultimo caracter for ':', entao ta definindo um rotulo
     if (token.back() == ':') {
         
-        // chama labelCheck
-        
         // pega o token seguinte
         std::string token2;
         lineStream >> token2;
@@ -168,9 +165,22 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
         
         // se for equ, salva o valor associado ao rotulo na lista
         if (token2 == "EQU") {
+            
+            // verifica se o rótulo é válido
+            token.pop_back();
+            int valid = labelCheck(token);
+            if (valid == -1)
+                reportError("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineCounter);
+            else if (valid == -2)
+                reportError("rótulos não podem começar com números", "léxico", lineCounter);
+            else if (valid == -3)
+                reportError("caracter inválido encontrado no rótulo", "léxico", lineCounter);
+            
+            // verifica se o comando equ deu problema
             int isEmpty = equCommand (line, lineStream, labelList, token);
             if (isEmpty)
                 reportError("definição de EQU vazia", "sintático", lineCounter);
+                
         }
             
     // se for if, determina se vai ou nao manter a proxima linha
