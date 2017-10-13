@@ -9,6 +9,7 @@ std::string o2mcr (std::string);
 std::vector<Instr> getInstrList (std::string);
 std::vector<Dir> getDirList (std::string);
 int integerCheck (std::string&, int&);
+void reportError (std::string, std::string, int);
 
 
 
@@ -79,6 +80,8 @@ int errorCheck (int argc, char *argv[], std::string instrFileName, std::string d
     return 0;
 }
 
+
+
 /*
 o2pre: passa uma string com extensao '.o' para extensao '.pre'
 entrada: string com o nome original com a extensao '.o'
@@ -94,6 +97,8 @@ std::string o2pre (std::string original) {
     return altered;
 }
 
+
+
 /*
 o2mcr: passa uma string com extensao '.o' para extensao '.mcr'
 entrada: string com o nome original com a extensao '.o'
@@ -108,6 +113,8 @@ std::string o2mcr (std::string original) {
     
     return altered;
 }
+
+
 
 /*
 getInstrList: constroi a tabela de instrucoes num vetor 
@@ -153,6 +160,8 @@ std::vector<Instr> getInstrList (std::string instrFileName) {
     return instrList;
 }
 
+
+
 /*
 getDirList: constroi a tabela de diretivas num vetor 
 entrada: nome do arquivo que contem a tabela
@@ -183,6 +192,8 @@ std::vector<Dir> getDirList (std::string dirFileName) {
     return dirList;
 }
 
+
+
 /*
 integerCheck: checa se a string pode ser convertida em um numero sem erros
 entrada: string a ser convertida e inteiro que armazenará o resultado
@@ -198,3 +209,23 @@ int integerCheck (std::string &value, int &conv) {
     return (*ptr == '\0'); 
     
 }
+
+
+
+/*
+reportError: mostra no terminal a mensagem de erro passada pelo programa, junto com o tipo de erro e a linha
+entrada: mensagem de erro, tipo de erro e linha do erro
+saida: nenhuma (mensagem de erro no terminal)
+*/
+void reportError (std::string message, std::string type, int line) {
+    std::cout << "Na linha " << line << " do arquivo de entrada:" << "\n";
+    std::cout << "\tErro: " << message << " (erro " << type << ")" << "\n\n";   
+}
+
+
+
+/*
+labelCheck: verifica se o rotulo eh valido
+entrada: rotulo a ser verificado
+saida: retorna 1 se eh valido
+*/

@@ -4,9 +4,9 @@
 
 /*      DECLARAÇÕES DAS FUNÇÕES      */
 void preReadLine (std::string&, std::ifstream&, std::vector<Label>&);
-void appendNextLine (std::string&, std::stringstream&, std::ifstream&, std::vector<Label>&);
-void equCommand (std::string&, std::stringstream&, std::vector<Label>&, std::string&);
-void ifCommand (std::string&, std::stringstream&, std::ifstream&, int&);
+void appendNextLine (std::string&, std::stringstream&, std::ifstream&, std::vector<Label>&, int&);
+int equCommand (std::string&, std::stringstream&, std::vector<Label>&, std::string&);
+int ifCommand (std::string&, std::stringstream&, std::ifstream&, int&);
 void preParser (std::string&, std::ifstream&, std::vector<Label>&, int&);
 int preProcessFile (std::string, std::string, std::vector<int>&);
 
@@ -45,9 +45,8 @@ void preReadLine (std::string &line, std::ifstream &asmFile, std::vector<Label> 
         std::size_t pos = line.find(labelList[i].name);
         
         // se encontrar em alguma posicao, substitui pelo numero associado ao rotulo
-        if (pos != std::string::npos) {
-            line.replace (pos, labelList[i].name.size(), std::to_string(labelList[i].value));
-        }
+        if (pos != std::string::npos)
+            line.replace (pos, labelList[i].name.size(), labelList[i].equ);
     }
     
 }
@@ -59,11 +58,14 @@ appendNextLine: le a proxima linha, anexa na atual e retorna a linha composta
 entrada: a linha atual, a stream da linha atual, a stream do arquivo e a lista de rotulos
 saida: nenhuma (linha e stream da linha alteradas por referencia)
 */
-void appendNextLine (std::string &line, std::stringstream &lineStream, std::ifstream &asmFile, std::vector<Label> &labelList) {
+void appendNextLine (std::string &line, std::stringstream &lineStream, std::ifstream &asmFile, std::vector<Label> &labelList, int &lineCounter) {
     
     // le e anexa à linha atual a proxima linha
     std::string nextLine;
-    preReadLine (nextLine, asmFile, labelList);
+    while (nextLine.size() == 0 && !asmFile.eof()) {
+        preReadLine (nextLine, asmFile, labelList);
+        lineCounter++;
+    }
     line = line + " " + nextLine;
     
     // e corrige a stream da linha
@@ -77,30 +79,22 @@ void appendNextLine (std::string &line, std::stringstream &lineStream, std::ifst
 /*
 equCommand: associa um valor ao rotulo
 entrada: linha atual, stream da linha atual, lista de rotulos e nome do rotulo
-saida: nenhuma (lista de rotulos alterada por referencia)
+saida: inteiro indicando se houve erro (lista de rotulos alterada por referencia)
 */
-void equCommand (std::string &line, std::stringstream &lineStream, std::vector<Label> &labelList, std::string &token) {
+int equCommand (std::string &line, std::stringstream &lineStream, std::vector<Label> &labelList, std::string &token) {
     
-    // le o valor a ser substituido
-    std::string value;
-    lineStream >> value;
+    // le o texto a ser substituido
+    std::string equ;
+    lineStream >> equ;
     
-    // tenta converter o numero para um inteiro
-    int conv;
-    int isInt = integerCheck (value, conv);
-    
-    // se conseguiu, cria o rotulo e coloca na lista
-    if (isInt) {
-        token.pop_back(); // apaga o ':'
-        Label label (token, conv); // cria o rotulo com o valor associado
-        labelList.push_back(label); // coloca o rotulo na lista de rotulos definidos
-    }
-    
-    // se nao tiver conseguido, tem q dar erro
-    // atualmente, ele simplesmente nao cria o rotulo se der erro
-    
+    token.pop_back(); // apaga o ':'
+    Label label (token, equ); // cria o rotulo com o valor associado
+    labelList.push_back(label); // coloca o rotulo na lista de rotulos definidos
+        
     // esvazia a string p nao salvar a linha do equ no codigo
     line.clear();
+    
+    return (equ.empty());
     
 }
 
@@ -109,9 +103,9 @@ void equCommand (std::string &line, std::stringstream &lineStream, std::vector<L
 /*
 ifCommand: se o valor do if for 1, compila a linha abaixo, senao esvazia a linha
 entrada: linha atual, stream da linha atual, stream do arquivo de entrada e contador de linhas
-saida: nenhuma (linha e contador de linhas alterados por referencia)
+saida: retorna se o numero lido eh inteiro (linha e contador de linhas alterados por referencia)
 */
-void ifCommand (std::string &line, std::stringstream &lineStream, std::ifstream &asmFile, int &lineCounter) {
+int ifCommand (std::string &line, std::stringstream &lineStream, std::ifstream &asmFile, int &lineCounter) {
     
     // le o numero seguinte (a busca ja trocou o rotulo por um valor)
     std::string value;
@@ -133,6 +127,8 @@ void ifCommand (std::string &line, std::stringstream &lineStream, std::ifstream 
     // por enquanto, um erro eh equivalente à IF 1, entao ele mantem a linha de baixo
     
     line.clear(); // limpa a linha atual, ja que era um if
+    
+    return isInt;
     
 }
 
@@ -158,23 +154,32 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
     // se o ultimo caracter for ':', entao ta definindo um rotulo
     if (token.back() == ':') {
         
+        // chama labelCheck
+        
         // pega o token seguinte
         std::string token2;
         lineStream >> token2;
         
         // se token2 estiver vazio, anexa a proxima linha
         if (token2.empty()) {
-            appendNextLine (line, lineStream, asmFile, labelList);
+            appendNextLine (line, lineStream, asmFile, labelList, lineCounter);
             lineStream >> token2; // pega o token correto
-            lineCounter++;
         }
         
         // se for equ, salva o valor associado ao rotulo na lista
-        if (token2 == "EQU")
-            equCommand (line, lineStream, labelList, token);
+        if (token2 == "EQU") {
+            int isEmpty = equCommand (line, lineStream, labelList, token);
+            if (isEmpty)
+                reportError("definição de EQU vazia", "sintático", lineCounter);
+        }
+            
+    // se for if, determina se vai ou nao manter a proxima linha
+    } else if (token == "IF") {
+        int isInt = ifCommand (line, lineStream, asmFile, lineCounter);
+        if (isInt != 1)
+            reportError("parâmetro de IF deveria ser um número decimal", "sintático", lineCounter);
+    }
         
-    } else if (token == "IF")
-        ifCommand (line, lineStream, asmFile, lineCounter);
 }
 
 

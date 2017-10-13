@@ -46,12 +46,12 @@ int main (int argc, char *argv[]) {
     
     // passagem de macros
     if (operation == "-m" || operation == "-o")
-        expandMacros (preFileName, mcrFileName, lineDictMcr);
+        expandMacros (preFileName, mcrFileName, lineDictMcr, lineDictPre);
     
     // faz o dicionario "composto"
     for (int i = 0; i < lineDictMcr.size(); ++i) {
         lineDict.push_back(lineDictPre[lineDictMcr[i]-1]);
-        // std::cout << ".mcr line: " << i+1 << ", .pre line: " << lineDictMcr[i] << ", .asm line: " << lineDictPre[lineDictMcr[i]-1] << "\n";
+        //std::cout << ".mcr line: " << i+1 << ", .pre line: " << lineDictMcr[i] << ", .asm line: " << lineDictPre[lineDictMcr[i]-1] << "\n";
     }
         
     // passagem normal
