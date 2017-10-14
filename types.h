@@ -52,11 +52,11 @@ struct Label {
     std::string equ; // definicao vinda de um equ
     int value; // definicao do rotulo (uma linha, um endereço ou um valor)
     int defined; // se o rotulo ja foi ou nao definido
-    int defition; // indica o proximo endereço na lista de pendencias
+    int pending; // indica o proximo endereço na lista de pendencias
     // metodos
     Label () {};
     Label (std::string nm, std::string eq): name(nm), equ(eq) {};
-    Label (std::string nm, int vl, int dfd, int dft): name(nm), value(vl), defined(dfd), defition(dft) {};
+    Label (std::string nm, int vl, int dfd, int pend): name(nm), value(vl), defined(dfd), pending(pend) {}; 
 };
 
 // Macro: armazena uma macro e suas caracteristcas

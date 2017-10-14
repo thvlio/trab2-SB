@@ -42,21 +42,21 @@ int main (int argc, char *argv[]) {
     
     // passagem de pre processamento
     if (operation == "-p" || operation == "-m" || operation == "-o")
-        preProcessFile (inFileName, preFileName, lineDictPre);
+        preProcessFile (inFileName, preFileName, lineDictPre, instrList, dirList);
     
     // passagem de macros
     if (operation == "-m" || operation == "-o")
-        expandMacros (preFileName, mcrFileName, lineDictMcr, lineDictPre);
+        expandMacros (preFileName, mcrFileName, lineDictMcr, lineDictPre, instrList, dirList);
     
     // faz o dicionario "composto"
     for (int i = 0; i < lineDictMcr.size(); ++i) {
         lineDict.push_back(lineDictPre[lineDictMcr[i]-1]);
-        //std::cout << ".mcr line: " << i+1 << ", .pre line: " << lineDictMcr[i] << ", .asm line: " << lineDictPre[lineDictMcr[i]-1] << "\n";
+        // std::cout << ".mcr line: " << i+1 << ", .pre line: " << lineDictMcr[i] << ", .asm line: " << lineDictPre[lineDictMcr[i]-1] << "\n";
     }
         
     // passagem normal
     if (operation == "-o")
-        assembleCode (mcrFileName, outFileName, lineDict);
+        assembleCode (mcrFileName, outFileName, lineDict, instrList, dirList);
     
     return 0;
     

@@ -4,7 +4,7 @@
 
 /*      DECLARAÇÕES DAS FUNÇÕES      */
 int constCheck (std::string&, int&);
-void assembleCode (std::string, std::string, std::vector<int>&);
+void assembleCode (std::string, std::string, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&);
 
 
 
@@ -57,7 +57,7 @@ assembleCode: faz a passagem de montagem no arquivo, que inclui:
 entrada: nome do arquivo de entrada '.mcr'
 saida: nome do arquivo de saida '.o'
 */
-void assembleCode (std::string mcrFileName, std::string outFileName, std::vector<int> &lineDict) {
+void assembleCode (std::string mcrFileName, std::string outFileName, std::vector<int> &lineDict, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
     
     std::ifstream mcrFile (mcrFileName);
     std::ofstream outFile (outFileName);
@@ -65,8 +65,14 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     std::vector<Label> labelList;
     
     int lineCounter = 1;
+    int addrCounter = 0;
     
     while (!mcrFile.eof()) {
+        
+        // chamar tudo isso aqui dentro de asmParser
+        // ele tem q de alguma forma devolver os bytes correspondentes à linha
+        
+        // depois chama uma funcao pra escrever
         
         std::string line;
         getline (mcrFile, line);
@@ -76,7 +82,36 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
         lineStream >> token;
         
         if (token.back() == ':') {
-            // tem um label
+            
+            // verifica se o rótulo é válido
+            token.pop_back();
+            int valid = labelCheck(token, instrList, dirList);
+            if (valid == -1)
+                reportError("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDict[lineCounter-1]);
+            else if (valid == -2)
+                reportError("rótulos não podem começar com números", "léxico", lineDict[lineCounter-1]);
+            else if (valid == -3)
+                reportError("caracter inválido encontrado no rótulo", "léxico", lineDict[lineCounter-1]);
+            else if (valid == -4)
+                reportError("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDict[lineCounter-1]);
+            
+            // verifica se o rótulo já está na lista de rótulos e se já foi definido
+            int alreadyDefined = 0;
+            int alreadyMentioned = 0;
+            for (int i = 0; i < labelList.size(); ++i) {
+                if (labelList[i].name == token) {
+                    alreadyMentioned = 1;
+                    if (labelList[i].defined)
+                        alreadyDefined = 1;
+                }
+            }
+            
+            if (alreadyDefined)
+                reportError("símbolo já definido", "léxico", lineDict[lineCounter-1]);
+            
+            // se ainda nao está na lista, coloca na lista (name, value, defined, pending)
+            Label label (token, 0, 0, addrCounter);
+            
             // coloca o label na tabela de simbolos e procura por erros
             // simbolo repetido, labelcheck
             // agora cata mais um token

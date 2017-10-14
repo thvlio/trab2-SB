@@ -7,8 +7,9 @@ void preReadLine (std::string&, std::ifstream&, std::vector<Label>&);
 void appendNextLine (std::string&, std::stringstream&, std::ifstream&, std::vector<Label>&, int&);
 int equCommand (std::string&, std::stringstream&, std::vector<Label>&, std::string&);
 int ifCommand (std::string&, std::stringstream&, std::ifstream&, int&);
-void preParser (std::string&, std::ifstream&, std::vector<Label>&, int&);
-int preProcessFile (std::string, std::string, std::vector<int>&);
+void preParser (std::string&, std::ifstream&, std::vector<Label>&, int&, std::vector<Instr>&, std::vector<Dir>&);
+int preProcessFile (std::string, std::string, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&);
+
 
 
 /*      DEFINIÇÕES DAS FUNÇÕES      */
@@ -44,9 +45,21 @@ void preReadLine (std::string &line, std::ifstream &asmFile, std::vector<Label> 
         // procura pelo nome do rotulo na linha
         std::size_t pos = line.find(labelList[i].name);
         
-        // se encontrar em alguma posicao, substitui pelo numero associado ao rotulo
-        if (pos != std::string::npos)
-            line.replace (pos, labelList[i].name.size(), labelList[i].equ);
+        // tamanho do nome do rótulo
+        int nameSize = labelList[i].name.size();
+       
+        // se encontrar em alguma posicao, substitui pelo texto associado ao rotulo
+        // verifica se o nome encontrado é um token individual
+        if (pos != std::string::npos) {
+            if (pos == 0) {
+                if (line[pos+nameSize] == ':' || line[pos+nameSize] == ' ')
+                    line.replace (pos, nameSize, labelList[i].equ);
+            } else {
+                if (line[pos-1] == ' ' && (line[pos+nameSize] == ' ' || pos+nameSize >= line.size()))
+                    line.replace (pos, nameSize, labelList[i].equ);
+            }
+        }
+            
     }
     
 }
@@ -138,7 +151,7 @@ preParser: processa uma linha do arquivo fonte
 entrada: linha atual, stream do arquivo de entrada, a lista de rotulos e o contador de linhas
 saida: nenhuma (linha lida e contador de linhas alterados por referência)
 */
-void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &labelList, int &lineCounter) {
+void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &labelList, int &lineCounter, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
     
     // le uma linha, corrige algumas coisas e procura na linha por rotulos que ja tenham sido definidos por equs
     preReadLine (line, asmFile, labelList);
@@ -168,13 +181,15 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
             
             // verifica se o rótulo é válido
             token.pop_back();
-            int valid = labelCheck(token);
+            int valid = labelCheck(token, instrList, dirList);
             if (valid == -1)
                 reportError("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineCounter);
             else if (valid == -2)
                 reportError("rótulos não podem começar com números", "léxico", lineCounter);
             else if (valid == -3)
                 reportError("caracter inválido encontrado no rótulo", "léxico", lineCounter);
+            else if (valid == -4)
+                reportError("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineCounter);
             
             // verifica se o comando equ deu problema
             int isEmpty = equCommand (line, lineStream, labelList, token);
@@ -203,7 +218,7 @@ preProcessFile: faz a passagem de preprocessamento no arquivo, que inclui:
 entrada: nome do arquivo de entrada '.asm', nome do arquivo de saida '.pre' e dicionario de linhas
 saida: inteiro indicando se houve erros
 */
-int preProcessFile (std::string inFileName, std::string preFileName, std::vector<int> &lineDict) {
+int preProcessFile (std::string inFileName, std::string preFileName, std::vector<int> &lineDict, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
     
     std::ifstream asmFile (inFileName);
     std::ofstream preFile (preFileName);
@@ -216,7 +231,7 @@ int preProcessFile (std::string inFileName, std::string preFileName, std::vector
         
         // chama o parser especifico do preprocessamento        
         std::string line;
-        preParser(line, asmFile, labelList, lineCounter);
+        preParser(line, asmFile, labelList, lineCounter, instrList, dirList);
             
         // se a linha nao retornar vazia, copia no arquivo '.pre'        
         if (!line.empty()) {

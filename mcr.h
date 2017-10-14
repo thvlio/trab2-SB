@@ -5,8 +5,8 @@
 /*      DECLARAÇÕES DAS FUNÇÕES      */
 void createMacro (std::string&, std::ifstream&, std::string&, std::vector<Macro>&, int&);
 void mcrSearchAndReplace (std::string&, std::string&, std::vector<Macro>&, int&);
-void mcrParser (std::string&, std::ifstream&, std::vector<Macro>&, int&, int&);
-int expandMacros (std::string, std::string, std::vector<int>&, std::vector<int>&);
+void mcrParser (std::string&, std::ifstream&, std::vector<Macro>&, int&, int&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&);
+int expandMacros (std::string, std::string, std::vector<int>&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&);
 
 
 
@@ -82,10 +82,10 @@ void mcrSearchAndReplace (std::string &line, std::string &token, std::vector<Mac
 
 /*
 mcrParser: parser do processamento de macros. procura definicoes e chamadas de macros nas linhas
-entrada: linha atual, stream do arquivo .pre, lista de macros, contador de linhas e flag indicando se uma macro foi chamada
+entrada: linha atual, stream do arquivo .pre, lista de macros, contador de linhas, flag indicando se uma macro foi chamada e dicionário de linhas do preprocessamento
 saida: nenhuma (linha atual, contador de linhas e flag de macro alterados por referencia)
 */
-void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &macroList, int &lineCounter, int &macroCall) {
+void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &macroList, int &lineCounter, int &macroCall, std::vector<int> &lineDictPre, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
     
     // le uma linha do arquivo
     getline(preFile, line);
@@ -107,14 +107,16 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
             
             // verifica se o rótulo é válido
             token.pop_back();
-            int valid = labelCheck(token);
+            int valid = labelCheck(token, instrList, dirList);
             if (valid == -1)
-                reportError("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineCounter);
+                reportError("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDictPre[lineCounter-1]);
             else if (valid == -2)
-                reportError("rótulos não podem começar com números", "léxico", lineCounter);
+                reportError("rótulos não podem começar com números", "léxico", lineDictPre[lineCounter-1]);
             else if (valid == -3)
-                reportError("caracter inválido encontrado no rótulo", "léxico", lineCounter);
-            
+                reportError("caracter inválido encontrado no rótulo", "léxico", lineDictPre[lineCounter-1]);
+            else if (valid == -4)
+                reportError("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDictPre[lineCounter-1]);
+                
             // cria uma macro na lista
             createMacro (line, preFile, token, macroList, lineCounter);
             
@@ -135,7 +137,7 @@ expandMacros: faz a passagem para expandir macros no arquivo, que inclui:
 entrada: nome do arquivo de entrada '.pre', nome do arquivo de saida '.mcr' e dicionario de linhas
 saida: inteiro representando a ocorrencia de erro
 */
-int expandMacros (std::string preFileName, std::string mcrFileName, std::vector<int> &lineDictMcr, std::vector<int> &lineDictPre) {
+int expandMacros (std::string preFileName, std::string mcrFileName, std::vector<int> &lineDictMcr, std::vector<int> &lineDictPre, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
     
     std::ifstream preFile (preFileName);
     std::ofstream mcrFile (mcrFileName);
@@ -149,7 +151,7 @@ int expandMacros (std::string preFileName, std::string mcrFileName, std::vector<
         
         // chama o parser da passagem de macros
         std::string line;
-        mcrParser(line, preFile, macroList, lineCounter, macroCall);
+        mcrParser(line, preFile, macroList, lineCounter, macroCall, lineDictPre, instrList, dirList);
         
         // se a linha nao estiver vazia, copia no arquivo '.mcr'        
         if (!line.empty()) {

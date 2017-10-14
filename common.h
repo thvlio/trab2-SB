@@ -10,6 +10,7 @@ std::vector<Instr> getInstrList (std::string);
 std::vector<Dir> getDirList (std::string);
 int integerCheck (std::string&, int&);
 void reportError (std::string, std::string, int);
+int labelCheck (std::string, std::vector<Instr>&, std::vector<Dir>&);
 
 
 
@@ -229,7 +230,7 @@ labelCheck: verifica se o rotulo eh valido
 entrada: rotulo a ser verificado
 saida: inteiro indicando se rotulo é válido
 */
-int labelCheck (std::string label) {
+int labelCheck (std::string label, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
     
     // checa o tamanho da string
     if (label.size() > 100)
@@ -244,6 +245,19 @@ int labelCheck (std::string label) {
         if ((label[i] < 'A' || label[i] > 'Z') && (label[i] < '0' || label[i] > '9') && (label[i] != '_'))
             return -3; 
     }
+    
+    // verifica se o rótulo tem o nome de uma instrução
+    for (int i = 0; i < instrList.size(); ++i) {
+        if (label == instrList[i].name)
+            return -4;
+    }
+    
+    // verifica se o rótulo tem o nome de uma diretiva
+    for (int i = 0; i < dirList.size(); ++i) {
+        if (label == dirList[i].name)
+            return -4;
+    }
+    
         
     return 0;
 
