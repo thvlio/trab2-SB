@@ -4,7 +4,8 @@
 
 /*      DECLARAÇÕES DAS FUNÇÕES      */
 int constCheck (std::string&, int&);
-std::vector<int> asmParser (std::ifstream&, std::vector<Label>&, int&, int&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&);
+void assembleInstr (Instr&, int&, std::vector<int>&, std::vector<Label>&, std::stringstream&);
+std::vector<int> asmParser (std::ifstream&, std::vector<Label>&, int&, int&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&, int&);
 void assembleCode (std::string, std::string, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&);
 
 
@@ -14,7 +15,7 @@ void assembleCode (std::string, std::string, std::vector<int>&, std::vector<Inst
 /*
 constCheck: checa se a string pode ser convertida em um numero (decimal ou hexa, negativo ou positivo) sem erros
 entrada: string a ser convertida e inteiro que armazenará o resultado
-saida: inteiro que determina se houve ou não erro na conversão
+saida: inteiro que determina se houve ou não erro na conversão (1 sem erro, 0 com erro)
 */
 int constCheck (std::string &value, int &conv) {
     
@@ -52,15 +53,85 @@ int constCheck (std::string &value, int &conv) {
 
 
 /*
+assembleInstr: le a instrucao e seus argumentos, e passa para codigo de maquina
+entrada:
+saida:
+*/
+void assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMachineCode, std::vector<Label> &labelList, std::stringstream &lineStream) {
+    
+    // -- eh uma instrucao
+    // -- le na tabela de instrucoes quantos argumentos ela leva
+    // -- le o num de tokens correspondente ao numero de argumentos
+    // -- verifica cada argumento na tabela de simbolos e tal
+    // -- soma ao contador de endereços o numero certo
+    // -- vai adicionando no vetor de codigo de maquina os codigos traduzidos
+    
+    // salva o codigo de maquina da instrucao
+    partialMachineCode.push_back(instr.opcode);
+    addrCounter++;
+    
+    // le os argumentos esperados pela funcao
+    for (int i = 0; i < instr.numArg; ++i) {
+        
+        // le um token
+        std::string token;
+        lineStream >> token;
+        
+        if (instr.numArg == 2 && i == 0)
+            token.pop_back();
+        
+        // procura o token na tabela de simbolos
+        int found = -1;
+        for (int i = 0; (i < labelList.size()) && (found < 0); ++i) {
+            if (token == labelList[i].name)
+                found = i;
+        }
+        
+        // se nao ta na tabela, bota na tabela e coloca a pendencia
+        if (found < 0) {
+            Label label (token, -1, 0, addrCounter); // (name, value, defined, pending)
+            labelList.push_back(label);
+            partialMachineCode.push_back(-1);
+        } else {
+            
+            // se ta na tabela e nao ta definido, coloca a pendencia
+            if (!labelList[found].defined) {
+                int nextPendingCode = labelList[found].pending;
+                partialMachineCode.push_back(nextPendingCode);
+                labelList[found].pending = addrCounter;
+            }
+            
+            // se ta na tabela e ta definido, so copia o valor no codigo de maquina
+            else {
+                int address = labelList[found].value;
+                partialMachineCode.push_back(address);
+            }
+            
+        }
+        
+        addrCounter++;
+        
+    }
+}
+
+
+
+/*
 asmParser: traduz uma linha em código máquina
 entrada:
 saida: código de máquina parcial num vetor de inteiros
 */
-std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelList, int &lineCounter, int &addrCounter, std::vector<int> &lineDict, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
+std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelList, int &lineCounter, int &addrCounter, std::vector<int> &lineDict, std::vector<Instr> &instrList, std::vector<Dir> &dirList, int &section) {
+    
+    std::vector<int> partialMachineCode;
     
     std::string line;
     getline (mcrFile, line);
     std::stringstream lineStream (line);
+    
+    // nao le a ultima linha em branco do arquivo
+    if (line.empty())
+        return partialMachineCode;
     
     std::string token;
     lineStream >> token;
@@ -82,9 +153,11 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         // verifica se o rótulo já está na lista de rótulos e se já foi definido
         int alreadyDefined = 0;
         int alreadyMentioned = 0;
+        int labelPos = -1;
         for (int i = 0; i < labelList.size(); ++i) {
             if (labelList[i].name == token) {
                 alreadyMentioned = 1;
+                labelPos = i;
                 if (labelList[i].defined)
                     alreadyDefined = 1;
             }
@@ -94,27 +167,95 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         if (alreadyDefined)
             reportError("símbolo já definido", "léxico", lineDict[lineCounter-1], line);
             
-        // nao foi definido mas ja foi mencionado ()
+        // nao foi definido mas ja foi mencionado (define ele agora)
         else if (alreadyMentioned) {
-            
-        } 
-            
+            labelList[labelPos].value = addrCounter;
+            labelList[labelPos].defined = 1;
+            // resolve a lista de pendencias?
+        }
         
-        // se ainda nao está na lista, coloca na lista (name, value, defined, pending)
-        Label label (token, 0, 0, addrCounter);
+        // nunca foi chamado nem definido (acrescenta novo rotulo definido)
+        else {
+            Label label (token, addrCounter, 1, -1); // (name, value, defined, pending)
+            labelList.push_back(label);
+        }
         
-        // coloca o label na tabela de simbolos e procura por erros
-        // simbolo repetido, labelcheck
-        // agora cata mais um token
+        // coloca um novo token no lugar do rótulo, que já foi processado
+        lineStream >> token;
+        
     }
     
-    // analisar o primeiro token e ver se eh instrucao ou diretiva
-        // procurar na tabela de instrucoes e diretivas
+    // agora que lidou com os possiveis rotulos, analisa o primeiro token e ve se é instrucao ou diretiva
+    int isInstruction = -1;
+    for (int i = 0; i < instrList.size(); ++i) {
+        if (token == instrList[i].name)
+            isInstruction = i;
+    }
+    int isDirective = -1;
+    for (int i = 0; i < dirList.size(); ++i) {
+        if (token == dirList[i].name)
+            isDirective = i;
+    }
     
-    // se for const space ou section cada um faz uma coisa
-        // depois q fizer o q tem q fazer vai pra proxima linha
+    // se nao encontrar o comando em nenhuma tabela, nao é um comando reconhecido
+    if (isInstruction == -1 && isDirective == -1)
+        reportError("comando não reconhecido", "sintático", lineDict[lineCounter-1], line);
         
-    // se for instrucao verificar quantos argumentos e tal, e ler da linha
+    else {
+        
+        // se for uma instrução, monta
+        if (isInstruction >= 0) {
+            Instr instr = instrList[isInstruction];
+            assembleInstr (instr, addrCounter, partialMachineCode, labelList, lineStream);
+            
+        // se for uma diretiva, faz uma função específica
+        } else if (isDirective >= 0) {
+            
+            Dir dir = dirList[isDirective];
+            std::string token2;
+            lineStream >> token2;
+            
+            // se for SECTION, atualiza a informação da seção
+            if (dir.name == "SECTION") {
+                if (token2 == "TEXT")
+                    section = 0;
+                else if (token2 == "DATA")
+                    section = 1;
+                else
+                    reportError("seção não reconhecida", "sintático", lineDict[lineCounter-1], line);
+                    
+            // se for SPACE, verifica os argumentos e coloca no código de máquina as reservas
+            } else if (dir.name == "SPACE") {
+                int amount;
+                if (token2.empty())
+                    amount = 1;
+                else {
+                    int status = integerCheck (token2, amount);
+                    if (status == 1 && amount < 1)
+                        status = 0;
+                    if (status == 0)
+                        reportError("número de elementos inválido", "sintático", lineDict[lineCounter-1], line);
+                }
+                for (int i = 0; i < amount; ++i) {
+                    partialMachineCode.push_back(0);
+                    addrCounter++;
+                }
+            
+            // se for CONST, verifica o argumento e salva no código de máquina
+            } else if (dir.name == "CONST") {
+                int constant;
+                if (token2.empty())
+                    reportError("é esperado um argumento para a reserva de constante", "sintático", lineDict[lineCounter-1], line);
+                int status = constCheck (token2, constant);
+                if (status == 0)
+                    reportError("número constante inválido", "sintático", lineDict[lineCounter-1], line);
+                partialMachineCode.push_back(constant);
+                addrCounter++;
+            }
+        }
+    }
+    
+    return partialMachineCode;
     
 }
 
@@ -134,17 +275,39 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     
     std::vector<Label> labelList;
     
+    std::vector<int> machineCode;
+    
     int lineCounter = 1;
     int addrCounter = 0;
+    int section = -1; // -1: nenhuma, 0: text, 1: data
     
     while (!mcrFile.eof()) {
         
-        std::vector<int> partialMachineCode = asmParser(mcrFile, labelList, lineCounter, addrCounter, lineDict, instrList, dirList);
+        // le o codigo de maquina parcial da linha
+        std::vector<int> partialMachineCode = asmParser(mcrFile, labelList, lineCounter, addrCounter, lineDict, instrList, dirList, section);
         
+        // anexa os codigos parciais
         for (int i = 0; i < partialMachineCode.size(); ++i)
-            outFile << partialMachineCode[i];
+            machineCode.push_back(partialMachineCode[i]);
+        
+        lineCounter++;
         
     }
+    
+    // resolve as listas de pendências
+    // talvez tenha q ser feito de outra forma (individualmente conforme rotulos forem definidos)
+    for (int i = 0; i < labelList.size(); ++i) {
+        while (labelList[i].pending != -1) {
+            int index = labelList[i].pending;
+            int nextIndex = machineCode[index];
+            machineCode[index] = labelList[i].value;
+            labelList[i].pending = nextIndex;
+        }
+    }
+    
+    // escreve o codigo de maquina final no arquivo
+    for (int i = 0; i < machineCode.size(); ++i)
+        outFile << machineCode[i] << " ";
     
     mcrFile.close();
     outFile.close();

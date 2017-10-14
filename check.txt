@@ -10,13 +10,13 @@ O montador deve ser capaz de:
     - NÂO ser sensível ao caso, podendo aceitar instruções/diretivas/rótulos em maiúsculas e minúsculas.
         [++++]
     - NÃO ter ordem fixa para as seções de TEXT e DATA, ou seja, as seções podem estar em qualquer ordem.
-        [----]
+        [++++]
     - Gerar um arquivo de saída em formato TEXTO (mais detalhes serão descritos a seguir).
-        [----]
+        [++++]
     - Desconsiderar as tabulações, quebras de linhas e espaços desnecessários em qualquer lugar do código.
         [++++]
     - A diretiva CONST deve aceitar números positivos e negativos (inteiros e hexadecimal).
-        [----]
+        [++++]
     - Deve ser possível trabalhar com vetores (SPACE com operando, e usar operações do tipo> LABEL + número).
         [----]
     - Capacidade de aceitar comentários indicados pelo símbolo ';'.
@@ -32,18 +32,18 @@ O montador deve ser capaz de:
     
 O programa deve detectar pelo menos os seguintes tipos de erro:
     - declarações e rótulos ausentes [----]
-    - declarações e rótulos repetidos [----]
+    - declarações e rótulos repetidos [++++]
     - pulo para rótulos inválidos [----]
     - pulo para seção errada [----]
-    - diretivas inválidas [----]
-    - instruções inválidas [----]
+    - diretivas inválidas [++++]
+    - instruções inválidas [++++]
     - diretivas ou instruções na seção errada [----]
     - divisão por zero (para constante) [----]
     - instruções com a quantidade de operandos inválida [----]
     - tokens inválidos [----]
     - dois rótulos na mesma linha [----]
     - seção TEXT faltante [----]
-    - seção inválida [----]
+    - seção inválida [++++]
     - tipo de argumento inválido [----]
     - modificação de um valor constante [----]
     

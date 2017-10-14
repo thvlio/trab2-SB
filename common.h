@@ -198,7 +198,7 @@ std::vector<Dir> getDirList (std::string dirFileName) {
 /*
 integerCheck: checa se a string pode ser convertida em um numero sem erros
 entrada: string a ser convertida e inteiro que armazenará o resultado
-saida: inteiro que determina se houve ou não erro na conversão
+saida: inteiro que determina se houve ou não erro na conversão (1 ok, 0 erro)
 */
 int integerCheck (std::string &value, int &conv) {
     
