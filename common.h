@@ -9,7 +9,7 @@ std::string o2mcr (std::string);
 std::vector<Instr> getInstrList (std::string);
 std::vector<Dir> getDirList (std::string);
 int integerCheck (std::string&, int&);
-void reportError (std::string, std::string, int);
+void reportError (std::string, std::string, int, std::string);
 int labelCheck (std::string, std::vector<Instr>&, std::vector<Dir>&);
 
 
@@ -218,9 +218,18 @@ reportError: mostra no terminal a mensagem de erro passada pelo programa, junto 
 entrada: mensagem de erro, tipo de erro e linha do erro
 saida: nenhuma (mensagem de erro no terminal)
 */
-void reportError (std::string message, std::string type, int line) {
-    std::cout << "Na linha " << line << " do arquivo de entrada:" << "\n";
-    std::cout << "\tErro: " << message << " (erro " << type << ")" << "\n\n";   
+void reportError (std::string message, std::string type, int lineNum, std::string line) {
+    
+    // configura algumas cores
+    std::string escRed = "\033[31;1m",
+    escGreen = "\033[32;1m",
+    escYellow = "\033[33;1m",
+    escBlue = "\033[34;1m",
+    escReset = "\033[0m";
+    
+    // mostra o erro
+    std::cout << escRed << "Erro" << escReset << " na linha " << escRed << lineNum << escReset << " do arquivo de entrada: ";
+    std::cout << message << " (erro " << type << ")" << "\n" << "\t" << escBlue << line << escReset << "\n\n";
 }
 
 
@@ -257,8 +266,6 @@ int labelCheck (std::string label, std::vector<Instr> &instrList, std::vector<Di
         if (label == dirList[i].name)
             return -4;
     }
-    
         
     return 0;
-
 }

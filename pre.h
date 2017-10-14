@@ -183,26 +183,27 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
             token.pop_back();
             int valid = labelCheck(token, instrList, dirList);
             if (valid == -1)
-                reportError("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineCounter);
+                reportError("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineCounter, line);
             else if (valid == -2)
-                reportError("rótulos não podem começar com números", "léxico", lineCounter);
+                reportError("rótulos não podem começar com números", "léxico", lineCounter, line);
             else if (valid == -3)
-                reportError("caracter inválido encontrado no rótulo", "léxico", lineCounter);
+                reportError("caracter inválido encontrado no rótulo", "léxico", lineCounter, line);
             else if (valid == -4)
-                reportError("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineCounter);
+                reportError("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineCounter, line);
             
             // verifica se o comando equ deu problema
             int isEmpty = equCommand (line, lineStream, labelList, token);
             if (isEmpty)
-                reportError("definição de EQU vazia", "sintático", lineCounter);
+                reportError("definição de EQU vazia", "sintático", lineCounter, line);
                 
         }
             
     // se for if, determina se vai ou nao manter a proxima linha
     } else if (token == "IF") {
+        std::string lineBackup = line;
         int isInt = ifCommand (line, lineStream, asmFile, lineCounter);
         if (isInt != 1)
-            reportError("parâmetro de IF deveria ser um número decimal", "sintático", lineCounter);
+            reportError("parâmetro de IF deveria ser um número decimal", "sintático", lineCounter, lineBackup);
     }
         
 }

@@ -36,6 +36,8 @@ struct Instr {
     Instr (std::string nm, int op, int na): name(nm), opcode(op), numArg(na) {};
 };
 
+
+
 // Dir: armazena uma diretiva e suas caracteristicas
 struct Dir {
     // membros
@@ -44,6 +46,8 @@ struct Dir {
     Dir () {};
     Dir (std::string nm): name(nm) {};  
 };
+
+
 
 // Label: armazena um rotulo e suas caracteristicas
 struct Label {
@@ -59,6 +63,8 @@ struct Label {
     Label (std::string nm, int vl, int dfd, int pend): name(nm), value(vl), defined(dfd), pending(pend) {}; 
 };
 
+
+
 // Macro: armazena uma macro e suas caracteristcas
 struct Macro {
     // membros
@@ -70,6 +76,8 @@ struct Macro {
     Macro () {};
     Macro (std::string nm, std::string df, int ln, int nl): name(nm), definition(df), initLine(ln), numLines(nl) {};
 };
+
+
 
 // a struct Label ja implementa estas informacoes, nao?
 struct Simbolo{

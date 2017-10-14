@@ -109,14 +109,23 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
             token.pop_back();
             int valid = labelCheck(token, instrList, dirList);
             if (valid == -1)
-                reportError("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDictPre[lineCounter-1]);
+                reportError("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDictPre[lineCounter-1], line);
             else if (valid == -2)
-                reportError("rótulos não podem começar com números", "léxico", lineDictPre[lineCounter-1]);
+                reportError("rótulos não podem começar com números", "léxico", lineDictPre[lineCounter-1], line);
             else if (valid == -3)
-                reportError("caracter inválido encontrado no rótulo", "léxico", lineDictPre[lineCounter-1]);
+                reportError("caracter inválido encontrado no rótulo", "léxico", lineDictPre[lineCounter-1], line);
             else if (valid == -4)
-                reportError("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDictPre[lineCounter-1]);
+                reportError("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDictPre[lineCounter-1], line);
                 
+            // verifica se esta macro já não foi declarada
+            int redefinition = 0;
+            for (int i = 0; i < macroList.size(); ++i) {
+                if (macroList[i].name == token)
+                    redefinition = 1;
+            }
+            if (redefinition)
+                reportError("redefinição de macro", "semântico", lineDictPre[lineCounter-1], line);
+            
             // cria uma macro na lista
             createMacro (line, preFile, token, macroList, lineCounter);
             

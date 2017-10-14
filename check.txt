@@ -21,7 +21,7 @@ O montador deve ser capaz de:
         [----]
     - Capacidade de aceitar comentários indicados pelo símbolo ';'.
         [++++]
-    - O comando COPY dvee utilizar uma vírgula e um espaço entre os operandos (COPY A, B)
+    - O comando COPY deve utilizar uma vírgula e um espaço entre os operandos (COPY A, B)
         [----]
     - Ser capaz de aceitar MACROS (mais detalhes serão descritos a seguir).
         [----]

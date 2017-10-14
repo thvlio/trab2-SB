@@ -87,13 +87,13 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
             token.pop_back();
             int valid = labelCheck(token, instrList, dirList);
             if (valid == -1)
-                reportError("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDict[lineCounter-1]);
+                reportError("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDict[lineCounter-1], line);
             else if (valid == -2)
-                reportError("rótulos não podem começar com números", "léxico", lineDict[lineCounter-1]);
+                reportError("rótulos não podem começar com números", "léxico", lineDict[lineCounter-1], line);
             else if (valid == -3)
-                reportError("caracter inválido encontrado no rótulo", "léxico", lineDict[lineCounter-1]);
+                reportError("caracter inválido encontrado no rótulo", "léxico", lineDict[lineCounter-1], line);
             else if (valid == -4)
-                reportError("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDict[lineCounter-1]);
+                reportError("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDict[lineCounter-1], line);
             
             // verifica se o rótulo já está na lista de rótulos e se já foi definido
             int alreadyDefined = 0;
@@ -107,7 +107,7 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
             }
             
             if (alreadyDefined)
-                reportError("símbolo já definido", "léxico", lineDict[lineCounter-1]);
+                reportError("símbolo já definido", "léxico", lineDict[lineCounter-1], line);
             
             // se ainda nao está na lista, coloca na lista (name, value, defined, pending)
             Label label (token, 0, 0, addrCounter);
