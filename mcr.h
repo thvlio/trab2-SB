@@ -102,11 +102,20 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
         std::string token2;
         lineStream >> token2;
         
+        // verifica se esse rótulo já foi definido como uma macro
+        token.pop_back();
+        int redefinition = 0;
+        for (int i = 0; i < macroList.size(); ++i) {
+            if (macroList[i].name == token)
+                redefinition = 1;
+        }
+        if (redefinition)
+            reportError("redefinição de macro", "semântico", lineDictPre[lineCounter-1], line);
+        
         // se for uma diretiva de macro, cria uma macro nova na lista
         if (token2 == "MACRO") {
             
             // verifica se o rótulo é válido
-            token.pop_back();
             int valid = labelCheck(token, instrList, dirList);
             if (valid == -1)
                 reportError("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDictPre[lineCounter-1], line);
@@ -116,15 +125,6 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
                 reportError("caracter inválido encontrado no rótulo", "léxico", lineDictPre[lineCounter-1], line);
             else if (valid == -4)
                 reportError("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDictPre[lineCounter-1], line);
-                
-            // verifica se esta macro já não foi declarada
-            int redefinition = 0;
-            for (int i = 0; i < macroList.size(); ++i) {
-                if (macroList[i].name == token)
-                    redefinition = 1;
-            }
-            if (redefinition)
-                reportError("redefinição de macro", "semântico", lineDictPre[lineCounter-1], line);
             
             // cria uma macro na lista
             createMacro (line, preFile, token, macroList, lineCounter);
