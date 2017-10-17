@@ -54,18 +54,14 @@ struct Label {
     // membros
     std::string name; // nome do rotulo
     std::string equ; // definicao vinda de um equ
-    int value; // definicao do rotulo (uma linha, um endereço ou um valor)
-    int defined; // se o rotulo ja foi ou nao definido
-    // int pending; // indica o proximo endereço na lista de pendencias
+    int value; // definicao do rotulo (um endereço)
+    int isDefined; // se o rotulo ja foi ou nao definido
     std::vector<int> pendList; // lista de pendencias
+    int isConst;
+    int vectSize;
     // metodos
     Label () {};
     Label (std::string nm, std::string eq): name(nm), equ(eq) {};
-    Label (std::string nm, int vl, int dfd): name(nm), value(vl), defined(dfd) {};
-    // Label (std::string nm, int vl, int dfd, int pend): name(nm), value(vl), defined(dfd), pending(pend) {}; 
-    Label (std::string nm, int vl, int dfd, int pend): name(nm), value(vl), defined(dfd) {
-        this->pendList.push_back(pend);
-    };
 };
 
 

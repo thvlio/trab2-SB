@@ -89,20 +89,17 @@ void assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMac
         
         // se nao ta na tabela, bota na tabela e coloca a pendencia
         if (found < 0) {
-            // Label label (token, -2, 0, addrCounter); // (name, value, defined, pending)
-            Label label (token, -2, 0, addrCounter); // (name, value, defined, pending)
+            Label label;
+            label.name = token;
+            label.isDefined = 0;
+            label.pendList.push_back(addrCounter);
             labelList.push_back(label);
             partialMachineCode.push_back(0); // futuramente, colocar o numero a ser somado ao valor do rotulo, pra poder usar ROTULO + N
             
         } else {
             
             // se ta na tabela e nao ta definido, coloca a pendencia
-            if (!labelList[found].defined) {
-                /*
-                int nextPendingCode = labelList[found].pending;
-                partialMachineCode.push_back(nextPendingCode);
-                labelList[found].pending = addrCounter;
-                */
+            if (!labelList[found].isDefined) {
                 labelList[found].pendList.push_back(addrCounter);
                 partialMachineCode.push_back(0); // futuramente, colocar o numero a ser somado ao valor do rotulo, pra poder usar ROTULO + N
             }
@@ -164,7 +161,7 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
             if (labelList[i].name == token) {
                 alreadyMentioned = 1;
                 labelPos = i;
-                if (labelList[i].defined)
+                if (labelList[i].isDefined)
                     alreadyDefined = 1;
             }
         }
@@ -176,14 +173,16 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         // nao foi definido mas ja foi mencionado (define ele agora)
         else if (alreadyMentioned) {
             labelList[labelPos].value = addrCounter;
-            labelList[labelPos].defined = 1;
+            labelList[labelPos].isDefined = 1;
             // resolve a lista de pendencias?
         }
         
         // nunca foi chamado nem definido (acrescenta novo rotulo definido)
         else {
-            // Label label (token, addrCounter, 1, -1); // (name, value, defined, pending)
-            Label label (token, addrCounter, 1); // (name, value, defined)
+            Label label;
+            label.name = token;
+            label.value = addrCounter;
+            label.isDefined = 1;
             labelList.push_back(label);
         }
         
