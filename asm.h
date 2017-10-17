@@ -4,7 +4,7 @@
 
 /*      DECLARAÇÕES DAS FUNÇÕES      */
 int constCheck (std::string&, int&);
-void assembleInstr (Instr&, int&, std::vector<int>&, std::vector<Label>&, std::stringstream&);
+int assembleInstr (Instr&, int&, std::vector<int>&, std::vector<Label>&, std::stringstream&);
 std::vector<int> asmParser (std::ifstream&, std::vector<Label>&, int&, int&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&, int&);
 void assembleCode (std::string, std::string, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&);
 
@@ -60,7 +60,6 @@ saida:
 int spaceCommand (std::string &token2, std::string &labelName, std::vector<int> &partialMachineCode, int &addrCounter, std::vector<Label> labelList) {
     
     int amount; // número de espaços a serem reservados
-    int error = 0; // se houve erro ou nao
     
     if (token2.empty()) // se não tem argumento, só reserva um espaço
         amount = 1;
@@ -68,7 +67,7 @@ int spaceCommand (std::string &token2, std::string &labelName, std::vector<int> 
     else { // se tem argumentos, checa se é um número válido
         int status = integerCheck (token2, amount);
         if ((status == 1 && amount < 1) || status == 0)  // não pode ser um número menor que 1
-            error = -1;
+            return -1;
     }
     
     for (int i = 0; i < amount; ++i) { // coloca a reserva no codigo de maquina
@@ -78,21 +77,59 @@ int spaceCommand (std::string &token2, std::string &labelName, std::vector<int> 
     
     // se não tiver rótulo antes de SPACE, dá erro
     if (labelName.empty()) {
-        error = -2;
+        return -2;
         
     } else {
         // procura o rótulo e ajusta as características
         for (int i = 0; i < labelList.size(); ++i) {
-            if (labelList[i].name = labelName) {
+            if (labelList[i].name == labelName) {
                 labelList[i].isConst = 0;
                 labelList[i].vectSize = amount;
             }
         }
     }
     
-    return error;
+    return 0;
     
 }
+
+
+
+/*
+constCommand: executa a diretiva const, e configura o rótulo
+entrada:
+saida:
+*/
+int constCommand (std::string &token2, std::string &labelName, std::vector<int> &partialMachineCode, int &addrCounter, std::vector<Label> labelList) {
+    
+    int constant;
+    
+    if (token2.empty()) // checa se foi dado um argumento
+        return -1;
+        
+    int status = constCheck (token2, constant); // checa se é um numero valido
+    if (status == 0)
+        return -2;
+        
+    partialMachineCode.push_back (constant); // adiciona a constante no código de máquina
+    addrCounter++;
+    
+    if (labelName.empty()) {
+        return -3;
+    
+    } else {
+        for (int i = 0; i < labelList.size(); ++i) {
+            if (labelList[i].name == labelName) {
+                labelList[i].isConst = 1;
+                labelList[i].vectSize = 1;
+            }
+        }
+    }
+        
+    return 0;
+    
+}
+
 
 
 /*
@@ -100,14 +137,7 @@ assembleInstr: le a instrucao e seus argumentos, e passa para codigo de maquina
 entrada:
 saida:
 */
-void assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMachineCode, std::vector<Label> &labelList, std::stringstream &lineStream) {
-    
-    // -- eh uma instrucao
-    // -- le na tabela de instrucoes quantos argumentos ela leva
-    // -- le o num de tokens correspondente ao numero de argumentos
-    // -- verifica cada argumento na tabela de simbolos e tal
-    // -- soma ao contador de endereços o numero certo
-    // -- vai adicionando no vetor de codigo de maquina os codigos traduzidos
+int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMachineCode, std::vector<Label> &labelList, std::stringstream &lineStream) {
     
     // salva o codigo de maquina da instrucao
     partialMachineCode.push_back(instr.opcode);
@@ -119,6 +149,10 @@ void assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMac
         // le um token
         std::string token;
         lineStream >> token;
+        
+        // retorna o negativo do numero de argumentos faltantes (-1 ou -2)
+        if (token.empty())
+            return -(instr.numArg - i);
         
         if (instr.numArg == 2 && i == 0)
             token.pop_back();
@@ -158,6 +192,16 @@ void assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMac
         addrCounter++;
         
     }
+    
+    // le mais token
+    std::string token2;
+    lineStream >> token2;
+    
+    // se houver mais um token, a quantidade de argumentos é maior q o esperado
+    if (!token2.empty())
+        return -3;
+    
+    return 0;
 }
 
 
@@ -259,7 +303,13 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         // se for uma instrução, monta
         if (isInstruction >= 0) {
             Instr instr = instrList[isInstruction];
-            assembleInstr (instr, addrCounter, partialMachineCode, labelList, lineStream);
+            int status = assembleInstr (instr, addrCounter, partialMachineCode, labelList, lineStream);
+            if (status == -1)
+                reportError("é esperado mais um argumento para "+instr.name, "sintático", lineDict[lineCounter-1], line);
+            else if (status == -2)
+                reportError("são esperados mais dois argumentos para "+instr.name, "sintático", lineDict[lineCounter-1], line);
+            else if (status == -3)
+                reportError("são esperados menos argumentos para "+instr.name, "sintático", lineDict[lineCounter-1], line);
             
         // se for uma diretiva, faz uma função específica
         } else if (isDirective >= 0) {
@@ -281,20 +331,21 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
             } else if (dir.name == "SPACE") {
                 int status = spaceCommand (token2, labelName, partialMachineCode, addrCounter, labelList);
                 if (status == -1)
-                    reportError("número de elementos inválido", "sintático", lineDict[lineCounter-1], line);
+                    reportError("número de elementos inválido", "léxico", lineDict[lineCounter-1], line);
                 else if (status == -2)
                     reportError("a diretiva SPACE precisa ser precedida de um rótulo", "sintático", lineDict[lineCounter-1], line);
             
             // se for CONST, verifica o argumento e salva no código de máquina
             } else if (dir.name == "CONST") {
-                int constant; // valor da constante
-                if (token2.empty())
+                int status = constCommand (token2, labelName, partialMachineCode, addrCounter, labelList);
+                if (status == -1)
                     reportError("é esperado um argumento para a reserva de constante", "sintático", lineDict[lineCounter-1], line);
-                int status = constCheck (token2, constant);
-                if (status == 0)
-                    reportError("número constante inválido", "sintático", lineDict[lineCounter-1], line);
-                partialMachineCode.push_back(constant); // adiciona a constante no código de máquina
-                addrCounter++;
+                else if (status == -2)
+                    reportError("número constante inválido", "léxico", lineDict[lineCounter-1], line);
+                else if (status == -3)
+                    reportError("a diretiva CONST precisa ser precedida de um rótulo", "sintático", lineDict[lineCounter-1], line);
+                    
+                
             }
         }
     }
@@ -338,8 +389,10 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
         
     }
     
+    // procura por rótulos que não foram definidos
+    // para poder indicar a linha onde o rotulo indefinido foi chamado, implementar um dicionario de endereços, que diz a que linha do codigo pertence um endereço    
+    
     // resolve as listas de pendências
-    // talvez tenha q ser feito de outra forma (individualmente conforme rotulos forem definidos)
     for (int i = 0; i < labelList.size(); ++i) {
         while (!labelList[i].pendList.empty()) {
             int index = labelList[i].pendList.back();

@@ -57,8 +57,8 @@ struct Label {
     int value; // definicao do rotulo (um endereço)
     int isDefined; // se o rotulo ja foi ou nao definido
     std::vector<int> pendList; // lista de pendencias
-    int isConst;
-    int vectSize;
+    int isConst; // se é um const ou não
+    int vectSize; // tamanho do vetor, para o caso de ser um space
     // metodos
     Label () {};
     Label (std::string nm, std::string eq): name(nm), equ(eq) {};
