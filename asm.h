@@ -89,7 +89,7 @@ void assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMac
         
         // se nao ta na tabela, bota na tabela e coloca a pendencia
         if (found < 0) {
-            Label label (token, -1, 0, addrCounter); // (name, value, defined, pending)
+            Label label (token, -2, 0, addrCounter); // (name, value, defined, pending)
             labelList.push_back(label);
             partialMachineCode.push_back(-1);
         } else {
