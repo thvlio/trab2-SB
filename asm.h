@@ -89,16 +89,22 @@ void assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMac
         
         // se nao ta na tabela, bota na tabela e coloca a pendencia
         if (found < 0) {
+            // Label label (token, -2, 0, addrCounter); // (name, value, defined, pending)
             Label label (token, -2, 0, addrCounter); // (name, value, defined, pending)
             labelList.push_back(label);
-            partialMachineCode.push_back(-1);
+            partialMachineCode.push_back(0); // futuramente, colocar o numero a ser somado ao valor do rotulo, pra poder usar ROTULO + N
+            
         } else {
             
             // se ta na tabela e nao ta definido, coloca a pendencia
             if (!labelList[found].defined) {
+                /*
                 int nextPendingCode = labelList[found].pending;
                 partialMachineCode.push_back(nextPendingCode);
                 labelList[found].pending = addrCounter;
+                */
+                labelList[found].pendList.push_back(addrCounter);
+                partialMachineCode.push_back(0); // futuramente, colocar o numero a ser somado ao valor do rotulo, pra poder usar ROTULO + N
             }
             
             // se ta na tabela e ta definido, so copia o valor no codigo de maquina
@@ -176,7 +182,8 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         
         // nunca foi chamado nem definido (acrescenta novo rotulo definido)
         else {
-            Label label (token, addrCounter, 1, -1); // (name, value, defined, pending)
+            // Label label (token, addrCounter, 1, -1); // (name, value, defined, pending)
+            Label label (token, addrCounter, 1); // (name, value, defined)
             labelList.push_back(label);
         }
         
@@ -296,12 +303,21 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     
     // resolve as listas de pendências
     // talvez tenha q ser feito de outra forma (individualmente conforme rotulos forem definidos)
+    /*
     for (int i = 0; i < labelList.size(); ++i) {
         while (labelList[i].pending != -1) {
             int index = labelList[i].pending;
             int nextIndex = machineCode[index];
             machineCode[index] = labelList[i].value;
             labelList[i].pending = nextIndex;
+        }
+    }
+    */
+    for (int i = 0; i < labelList.size(); ++i) {
+        while (!labelList[i].pendList.empty()) {
+            int index = labelList[i].pendList.back();
+            labelList[i].pendList.pop_back();
+            machineCode[index] = labelList[i].value;
         }
     }
     
