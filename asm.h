@@ -53,6 +53,49 @@ int constCheck (std::string &value, int &conv) {
 
 
 /*
+spaceCommand: executa a diretiva space, e configura o rótulo
+entrada:
+saida:
+*/
+int spaceCommand (std::string &token2, std::string &labelName, std::vector<int> &partialMachineCode, int &addrCounter, std::vector<Label> labelList) {
+    
+    int amount; // número de espaços a serem reservados
+    int error = 0; // se houve erro ou nao
+    
+    if (token2.empty()) // se não tem argumento, só reserva um espaço
+        amount = 1;
+        
+    else { // se tem argumentos, checa se é um número válido
+        int status = integerCheck (token2, amount);
+        if ((status == 1 && amount < 1) || status == 0)  // não pode ser um número menor que 1
+            error = -1;
+    }
+    
+    for (int i = 0; i < amount; ++i) { // coloca a reserva no codigo de maquina
+        partialMachineCode.push_back(0);
+        addrCounter++;
+    }
+    
+    // se não tiver rótulo antes de SPACE, dá erro
+    if (labelName.empty()) {
+        error = -2;
+        
+    } else {
+        // procura o rótulo e ajusta as características
+        for (int i = 0; i < labelList.size(); ++i) {
+            if (labelList[i].name = labelName) {
+                labelList[i].isConst = 0;
+                labelList[i].vectSize = amount;
+            }
+        }
+    }
+    
+    return error;
+    
+}
+
+
+/*
 assembleInstr: le a instrucao e seus argumentos, e passa para codigo de maquina
 entrada:
 saida:
@@ -139,6 +182,8 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
     std::string token;
     lineStream >> token;
     
+    std::string labelName;
+    
     if (token.back() == ':') {
         
         // verifica se o rótulo é válido
@@ -168,13 +213,12 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         
         // ja foi definido (da erro de simbolo ja definido)
         if (alreadyDefined)
-            reportError("símbolo já definido", "léxico", lineDict[lineCounter-1], line);
+            reportError("símbolo já definido", "semântico", lineDict[lineCounter-1], line);
             
         // nao foi definido mas ja foi mencionado (define ele agora)
         else if (alreadyMentioned) {
             labelList[labelPos].value = addrCounter;
             labelList[labelPos].isDefined = 1;
-            // resolve a lista de pendencias?
         }
         
         // nunca foi chamado nem definido (acrescenta novo rotulo definido)
@@ -185,6 +229,9 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
             label.isDefined = 1;
             labelList.push_back(label);
         }
+        
+        // salva o nome do rotulo
+        labelName = token;
         
         // coloca um novo token no lugar do rótulo, que já foi processado
         lineStream >> token;
@@ -232,30 +279,21 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                     
             // se for SPACE, verifica os argumentos e coloca no código de máquina as reservas
             } else if (dir.name == "SPACE") {
-                int amount;
-                if (token2.empty())
-                    amount = 1;
-                else {
-                    int status = integerCheck (token2, amount);
-                    if (status == 1 && amount < 1)
-                        status = 0;
-                    if (status == 0)
-                        reportError("número de elementos inválido", "sintático", lineDict[lineCounter-1], line);
-                }
-                for (int i = 0; i < amount; ++i) {
-                    partialMachineCode.push_back(0);
-                    addrCounter++;
-                }
+                int status = spaceCommand (token2, labelName, partialMachineCode, addrCounter, labelList);
+                if (status == -1)
+                    reportError("número de elementos inválido", "sintático", lineDict[lineCounter-1], line);
+                else if (status == -2)
+                    reportError("a diretiva SPACE precisa ser precedida de um rótulo", "sintático", lineDict[lineCounter-1], line);
             
             // se for CONST, verifica o argumento e salva no código de máquina
             } else if (dir.name == "CONST") {
-                int constant;
+                int constant; // valor da constante
                 if (token2.empty())
                     reportError("é esperado um argumento para a reserva de constante", "sintático", lineDict[lineCounter-1], line);
                 int status = constCheck (token2, constant);
                 if (status == 0)
                     reportError("número constante inválido", "sintático", lineDict[lineCounter-1], line);
-                partialMachineCode.push_back(constant);
+                partialMachineCode.push_back(constant); // adiciona a constante no código de máquina
                 addrCounter++;
             }
         }
@@ -302,16 +340,6 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     
     // resolve as listas de pendências
     // talvez tenha q ser feito de outra forma (individualmente conforme rotulos forem definidos)
-    /*
-    for (int i = 0; i < labelList.size(); ++i) {
-        while (labelList[i].pending != -1) {
-            int index = labelList[i].pending;
-            int nextIndex = machineCode[index];
-            machineCode[index] = labelList[i].value;
-            labelList[i].pending = nextIndex;
-        }
-    }
-    */
     for (int i = 0; i < labelList.size(); ++i) {
         while (!labelList[i].pendList.empty()) {
             int index = labelList[i].pendList.back();
