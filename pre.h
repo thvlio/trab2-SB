@@ -70,8 +70,6 @@ void preReadLine (std::string &line, std::ifstream &asmFile, std::vector<Label> 
             pos = line.find(labelList[i].name, minPos);
             
         }
-       
-
             
     }
     
@@ -144,7 +142,7 @@ int ifCommand (std::stringstream &lineStream, std::ifstream &asmFile, int &lineC
     lineStream >> value;
     
     // tenta converter o numero para um inteiro
-    int conv;
+    int conv = -1;
     int isInt = integerCheck (value, conv);
     
     if (!isInt)
@@ -196,6 +194,10 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
         // pega o token seguinte
         std::string token2;
         lineStream >> token2;
+        
+        // checa se o token seguinte é um rótulo
+        if (token2.back() == ':')
+            reportError ("mais de um rótulo em uma linha", "sintático", lineCounter, line);
         
         // se token2 estiver vazio, anexa a proxima linha
         if (token2.empty()) {

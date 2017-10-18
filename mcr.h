@@ -102,6 +102,10 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
         std::string token2;
         lineStream >> token2;
         
+        // checa se o token seguinte é um rótulo
+        if (token2.back() == ':')
+            reportError ("mais de um rótulo em uma linha", "sintático", lineDictPre[lineCounter-1], line);
+        
         // verifica se esse rótulo já foi definido como uma macro
         token.pop_back();
         int redefinition = 0;
@@ -154,7 +158,7 @@ int expandMacros (std::string preFileName, std::string mcrFileName, std::vector<
     std::vector<Macro> macroList;
     
     int lineCounter = 1;
-    int macroCall;
+    int macroCall = -1;
     
     while (!preFile.eof()) {
         

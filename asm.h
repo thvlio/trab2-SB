@@ -5,7 +5,7 @@
 /*      DECLARAÇÕES DAS FUNÇÕES      */
 int constCheck (std::string&, int&);
 int assembleInstr (Instr&, int&, std::vector<int>&, std::vector<Label>&, std::stringstream&);
-std::vector<int> asmParser (std::ifstream&, std::vector<Label>&, int&, int&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&, int&);
+std::vector<int> asmParser (std::ifstream&, std::vector<Label>&, int&, int&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&, int&, int&, std::vector<int>&);
 void assembleCode (std::string, std::string, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&);
 
 
@@ -114,9 +114,10 @@ int constCommand (std::string &token2, std::string &labelName, std::vector<int> 
     partialMachineCode.push_back (constant); // adiciona a constante no código de máquina
     addrCounter++;
     
-    if (labelName.empty()) {
+    if (labelName.empty()) { // checa se foi declarado um rotulo antes
         return -3;
     
+    // se foi, arruma o rotulo
     } else {
         for (int i = 0; i < labelList.size(); ++i) {
             if (labelList[i].name == labelName) {
@@ -211,7 +212,7 @@ asmParser: traduz uma linha em código máquina
 entrada:
 saida: código de máquina parcial num vetor de inteiros
 */
-std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelList, int &lineCounter, int &addrCounter, std::vector<int> &lineDict, std::vector<Instr> &instrList, std::vector<Dir> &dirList, int &section) {
+std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelList, int &lineCounter, int &addrCounter, std::vector<int> &lineDict, std::vector<Instr> &instrList, std::vector<Dir> &dirList, int &section, int &sectionText, std::vector<int> &addrDict) {
     
     std::vector<int> partialMachineCode;
     
@@ -280,6 +281,10 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         // coloca um novo token no lugar do rótulo, que já foi processado
         lineStream >> token;
         
+        // ja checa pra ver se não é mais um rótulo
+        if (token.back() == ':')
+            reportError ("mais de um rótulo em uma linha", "sintático", lineDict[lineCounter-1], line);
+        
     }
     
     // agora que lidou com os possiveis rotulos, analisa o primeiro token e ve se é instrucao ou diretiva
@@ -310,6 +315,8 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                 reportError("são esperados mais dois argumentos para "+instr.name, "sintático", lineDict[lineCounter-1], line);
             else if (status == -3)
                 reportError("são esperados menos argumentos para "+instr.name, "sintático", lineDict[lineCounter-1], line);
+            if (section != 0)
+                reportError("instruções devem estar na seção de texto", "semântico", lineDict[lineCounter-1], line);
             
         // se for uma diretiva, faz uma função específica
         } else if (isDirective >= 0) {
@@ -320,9 +327,10 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
             
             // se for SECTION, atualiza a informação da seção
             if (dir.name == "SECTION") {
-                if (token2 == "TEXT")
+                if (token2 == "TEXT") {
                     section = 0;
-                else if (token2 == "DATA")
+                    sectionText = 0;
+                } else if (token2 == "DATA")
                     section = 1;
                 else
                     reportError("seção não reconhecida", "sintático", lineDict[lineCounter-1], line);
@@ -334,6 +342,8 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                     reportError("número de elementos inválido", "léxico", lineDict[lineCounter-1], line);
                 else if (status == -2)
                     reportError("a diretiva SPACE precisa ser precedida de um rótulo", "sintático", lineDict[lineCounter-1], line);
+                if (section != 1)
+                    reportError("SPACE deve estar na seção de dados", "semântico", lineDict[lineCounter-1], line);
             
             // se for CONST, verifica o argumento e salva no código de máquina
             } else if (dir.name == "CONST") {
@@ -344,11 +354,16 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                     reportError("número constante inválido", "léxico", lineDict[lineCounter-1], line);
                 else if (status == -3)
                     reportError("a diretiva CONST precisa ser precedida de um rótulo", "sintático", lineDict[lineCounter-1], line);
-                    
+                if (section != 1)
+                    reportError("CONST deve estar na seção de dados", "semântico", lineDict[lineCounter-1], line);   
                 
             }
         }
     }
+    
+    // coloca os endereços no dicionario de endereços
+    for (int i = 0; i < partialMachineCode.size(); ++i)
+        addrDict.push_back(lineCounter);
     
     return partialMachineCode;
     
@@ -372,14 +387,17 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     
     std::vector<int> machineCode;
     
+    std::vector<int> addrDict;
+    
     int lineCounter = 1;
     int addrCounter = 0;
     int section = -1; // -1: nenhuma, 0: text, 1: data
+    int sectionText = -1; // -1: não encontrou seção texto, 0: encontrou
     
     while (!mcrFile.eof()) {
         
         // le o codigo de maquina parcial da linha
-        std::vector<int> partialMachineCode = asmParser(mcrFile, labelList, lineCounter, addrCounter, lineDict, instrList, dirList, section);
+        std::vector<int> partialMachineCode = asmParser(mcrFile, labelList, lineCounter, addrCounter, lineDict, instrList, dirList, section, sectionText, addrDict);
         
         // anexa os codigos parciais
         for (int i = 0; i < partialMachineCode.size(); ++i)
@@ -390,7 +408,16 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     }
     
     // procura por rótulos que não foram definidos
-    // para poder indicar a linha onde o rotulo indefinido foi chamado, implementar um dicionario de endereços, que diz a que linha do codigo pertence um endereço    
+    for (int i = 0; i < labelList.size(); ++i) {
+        if (!labelList[i].isDefined) {
+            for (int j = 0; j < labelList[i].pendList.size(); ++j) {
+                reportError ("rótulo não definido", "semântico", lineDict[addrDict[labelList[i].pendList[j]]-1], "");
+            }
+        }
+    } 
+    
+    if (sectionText == -1)
+        reportError ("seção texto é obrigatória", "semântico", -1, "");
     
     // resolve as listas de pendências
     for (int i = 0; i < labelList.size(); ++i) {

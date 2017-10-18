@@ -202,7 +202,7 @@ saida: inteiro que determina se houve ou não erro na conversão (1 ok, 0 erro)
 */
 int integerCheck (std::string &value, int &conv) {
     
-    char *ptr; // ponteiro para um caracter
+    char *ptr = nullptr; // ponteiro para um caracter
     const char *cValue = value.c_str(); // array de caracteres equivalente à string
     conv = strtol(cValue, &ptr, 10); // converte o array para um numero e altera ptr para o ultimo caracter lido
     
@@ -229,7 +229,7 @@ void reportError (std::string message, std::string type, int lineNum, std::strin
     
     // mostra o erro
     std::cout << escRed << "Erro" << escReset << " na linha " << escRed << lineNum << escReset << " do arquivo de entrada: ";
-    std::cout << message << " (erro " << type << ")" << "\n" << "\t" << escBlue << line << escReset << "\n\n";
+    std::cout << escYellow << message << escReset << " (erro " << type << ")" << "\n" << "\t" << escBlue << line << escReset << "\n\n";
 }
 
 
