@@ -3,7 +3,7 @@
 
 
 /*      DECLARAÇÕES DAS FUNÇÕES      */
-void createMacro (std::string&, std::ifstream&, std::string&, std::vector<Macro>&, int&);
+int createMacro (std::string&, std::ifstream&, std::string&, std::vector<Macro>&, int&);
 void mcrSearchAndReplace (std::string&, std::string&, std::vector<Macro>&, int&);
 void mcrParser (std::string&, std::ifstream&, std::vector<Macro>&, int&, int&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&);
 int expandMacros (std::string, std::string, std::vector<int>&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&);
@@ -15,9 +15,9 @@ int expandMacros (std::string, std::string, std::vector<int>&, std::vector<int>&
 /*
 createMacro: le a definicao de uma macro e guarda na lista de macros
 entrada: linha atual, stream do arquivo .pre, nome da macro, lista de macros e contador de linha
-saida: nenhuma (lista de macros e contador de linhas alterados por referencia)
+saida: inteiro indicando erro (lista de macros e contador de linhas alterados por referencia)
 */
-void createMacro (std::string &line, std::ifstream &preFile, std::string &token, std::vector<Macro> &macroList, int &lineCounter) {
+int createMacro (std::string &line, std::ifstream &preFile, std::string &token, std::vector<Macro> &macroList, int &lineCounter) {
     
     // cria uma string p guardar a definicao da macro
     std::string definition;
@@ -46,6 +46,9 @@ void createMacro (std::string &line, std::ifstream &preFile, std::string &token,
             reachedEnd = 1;
             definition.pop_back();
         }
+        
+        if (!reachedEnd && preFile.eof())
+            return -1;
     }
     
     // armazena a macro na lista de macros
@@ -131,7 +134,9 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
                 reportError("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDictPre[lineCounter-1], line);
             
             // cria uma macro na lista
-            createMacro (line, preFile, token, macroList, lineCounter);
+            int status = createMacro (line, preFile, token, macroList, lineCounter);
+            if (status == -1)
+                reportError("a definição de uma macro deve terminar com END", "semântico", lineDictPre[lineCounter-1], line);
             
         }
     

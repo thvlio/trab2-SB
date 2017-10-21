@@ -6,7 +6,7 @@
 int constCheck (std::string&, int&);
 int spaceCommand (std::stringstream&, std::string&, std::vector<int>&, int&, std::vector<Label>&);
 int constCommand (std::stringstream&, std::string&, std::vector<int>&, int&, std::vector<Label>&);
-int assembleInstr (Instr&, int&, std::vector<int>&, std::vector<Label>&, std::stringstream&);
+int assembleInstr (Instr&, int&, std::vector<int>&, std::vector<Label>&, std::stringstream&, std::vector<Instr>&, std::vector<Dir>&);
 std::vector<int> asmParser (std::ifstream&, std::vector<Label>&, int&, int&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&, int&, int&, std::vector<int>&, std::vector<std::string>&);
 void assembleCode (std::string, std::string, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&);
 
@@ -163,7 +163,7 @@ assembleInstr: le a instrucao e seus argumentos, e passa para codigo de maquina
 entrada:
 saida:
 */
-int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMachineCode, std::vector<Label> &labelList, std::stringstream &lineStream) {
+int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMachineCode, std::vector<Label> &labelList, std::stringstream &lineStream, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
     
     // salva o codigo de maquina da instrucao
     partialMachineCode.push_back(instr.opcode);
@@ -176,23 +176,111 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
         std::string token;
         lineStream >> token;
         
-        char c;
-        lineStream.get(c); // le o espaço entre os tokens (ou um espaço vazio no final)
-        c = lineStream.peek(); // verifica qual é o próximo caracter a ser lido
-        std::cout << "c: " << c << "\n";
-        
         // retorna -1 se faltam argumentos (token vazio antes de chegar ao final do for)
         if (token.empty())
             return -1;
         
-        // se for COPY (2 args), retira a vírgula, além de checar se tem vírgula
+        int offset; // offset para acesso aos vetores
+        
+        // se for COPY (2 args) ou qualquer instrução com mais de um argumento (atualmente só tem o COPY mesmo)
         if (instr.numArg > 1 && i < instr.numArg-1) {
-            if (token.back() == ',')
-                token.pop_back();
-            else
-                return -2; // -2 indica que falta a vírgula
-        }
             
+            // se no final do token tiver virgula
+            if (token.back() == ',') {
+                token.pop_back(); // tira a virgula
+                int valid = labelCheck(token, instrList, dirList); // procura erros no rotulo
+                if (valid <= -1 && valid >= -4)
+                    return valid-8;
+                offset = 0; // ta acessando a posicao 0
+                
+            // se nao tiver virgula
+            } else {
+                
+                // le o proximo token (esperado que seja um +)
+                std::string token2;
+                lineStream >> token2;
+                if (token2.empty())
+                    return -13;
+                if (token2 == ",")
+                    return -2; // se for virgula, avisa que a virgula nao deve ser separada por espaço do 1o operador
+                else if (token2 != "+") {
+                    int valid = labelCheck(token2, instrList, dirList); // procura erros no rotulo
+                    if (valid == 0)
+                        return -7; // faltando virgula entre os operandos
+                    else
+                        return -6; // op de indexacao invalida/rotulo invalido
+                }
+                
+                // le o proximo token (esperado que seja um numero valido)
+                std::string token3;
+                lineStream >> token3;
+                if (token3.empty())
+                    return -13;
+                    
+                // esperado que tenha uma virgula depois do numero
+                if (token3.back() == ',') { 
+                    token3.pop_back();
+                    int status = integerCheck (token3, offset);
+                    if ((status == 1 && offset < 0) || status == 0)  // tem que ser maior ou igual a 0
+                        return -8;
+                        
+                // se nao tem virgula
+                } else { 
+                    int status = integerCheck (token3, offset);
+                    if ((status == 1 && offset < 0) || status == 0)  // tem que ser maior ou igual a 0
+                        return -8;
+                    //  se for valido, le o proximo token (esse token ta errado de qualquer forma)
+                    std::string token4;
+                    lineStream >> token4;
+                    if (token4.empty())
+                        return -1; // de estiver vazio, o numero de argumento esta errado
+                    if (token4 == ",")
+                        return -2; // se o token for um virgula, nao deveria ter sido serpada por espaço
+                    else {
+                        int valid = labelCheck(token2, instrList, dirList); // procura erros no rotulo
+                        if (valid == 0)
+                            return -7; // faltando virgula entre os operandos
+                        else
+                            return -6; // op de indexacao invalida/rotulo invalido
+                    }
+                        
+                }
+            }
+            
+        } else { // se nao for esperada uma virgula
+            
+            // procura erros no rotulo
+            int valid = labelCheck(token, instrList, dirList);
+            if (valid <= -1 && valid >= -4)
+                return valid-8;
+                
+            // le o proximo token
+            std::string token2;
+            lineStream >> token2;
+            if (token2.empty())
+                offset = 0; // se ta no final da linha, nao tem offset
+            
+            else if (token2 == "+") {
+                // le o ultimo token
+                std::string token3;
+                lineStream >> token3;
+                if (token3.empty())
+                    return -13;
+                // verica se o numero eh valido
+                int status = integerCheck (token3, offset);
+                if ((status == 1 && offset < 0) || status == 0)  // tem que ser maior ou igual a 0
+                    return -8;
+            
+            } else {
+                int valid = labelCheck(token2, instrList, dirList); // checa se eh um rotulo valido
+                if (valid == 0)
+                    return -1; // se for, numero de argumento invalido
+                else
+                    return -6; // se nao for, indexacao invalida
+            }
+            
+        }
+        
         // procura o token na tabela de simbolos
         int found = -1;
         for (int i = 0; (i < labelList.size()) && (found < 0); ++i) {
@@ -218,7 +306,7 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
                 
             label.pendList.push_back(addrCounter);
             labelList.push_back(label);
-            partialMachineCode.push_back(0); // futuramente, colocar o numero a ser somado ao valor do rotulo, pra poder usar ROTULO + N (depois verificar ao resolver a lista de pendencia se o tamanho esta batendo)
+            partialMachineCode.push_back(offset);
             
         } else {
             
@@ -235,7 +323,7 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
                     labelList[found].auxInfoList.push_back(0); // 0 indica instrucao padrao
                 
                 labelList[found].pendList.push_back(addrCounter);
-                partialMachineCode.push_back(0); // futuramente, colocar o numero a ser somado ao valor do rotulo, pra poder usar ROTULO + N (depois verificar ao resolver a lista de pendencia se o tamanho esta batendo)
+                partialMachineCode.push_back(offset);
             }
             
             // se ta na tabela e ta definido, ja indica os problemas e copia o endereço no codigo de maquina
@@ -251,10 +339,23 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
                     if (labelList[found].isConst != 0)
                         return -5; // -5 indica tentativa de modificar valor constante
                 }
+                        
+                // o acesso a memoria não pode usar um rótulo da seção de texto
+                if (labelList[found].vectSize == 0 && instr.name != "JMP" && instr.name != "JMPP" && instr.name != "JMPN" && instr.name != "JMPZ")
+                    return -14;
                 
-                // checar se o tamanho do rotulo bate com o indice (rotulo + n)
-                int address = labelList[found].value; // eventualmente somar com algum valor
-                partialMachineCode.push_back(address);
+                // nao se pode usar offset com pulos
+                if (instr.opcode >= 5 || instr.opcode <= 8) {
+                    if (offset != 0)
+                        return -15;
+                }
+                
+                // checa se o tamanho do rotulo bate com o indice n (rotulo + n)
+                if (offset >= labelList[found].vectSize && labelList[found].vectSize > 0)
+                    return -(found+16); // retorna onde ta o rotulo
+                
+                int address = labelList[found].value;
+                partialMachineCode.push_back(address+offset);
             }
             
         }
@@ -338,6 +439,7 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
             labelList[labelPos].value = addrCounter;
             labelList[labelPos].isDefined = 1;
             labelList[labelPos].vectSize = 0; // indica que é rotulo da area de texto (pode mudar se for chamada uma diretiva da área de dados)
+            labelList[labelPos].isConst = 0;
         }
         
         // nunca foi chamado nem definido (acrescenta novo rotulo definido)
@@ -347,6 +449,7 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
             label.value = addrCounter;
             label.isDefined = 1;
             label.vectSize = 0;
+            label.isConst = 0;
             labelList.push_back(label);
         }
         
@@ -383,7 +486,7 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         // se for uma instrução, monta
         if (isInstruction >= 0) {
             Instr instr = instrList[isInstruction];
-            int status = assembleInstr (instr, addrCounter, partialMachineCode, labelList, lineStream);
+            int status = assembleInstr (instr, addrCounter, partialMachineCode, labelList, lineStream, instrList, dirList);
             if (status == -1) {
                 if (instr.numArg == 0)
                     reportError("não é esperado nenhum argumento para "+instr.name, "sintático", lineDict[lineCounter-1], line);
@@ -392,13 +495,37 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                 else if (instr.numArg == 2)
                     reportError("são esperados 2 argumentos para "+instr.name, "sintático", lineDict[lineCounter-1], line);
             } else if (status == -2)
-                reportError("os argumentos de "+instr.name+" devem ser separados por vírgula", "sintático", lineDict[lineCounter-1], line);
+                reportError("a vírgula não deve ser separada do primeiro operando por espaço", "sintático", lineDict[lineCounter-1], line);
             else if (status == -3)
                 reportError ("divisão por zero", "semântico", lineDict[lineCounter-1], line);
             else if (status == -4)
                 reportError ("pulo para seção inválida", "semântico", lineDict[lineCounter-1], line);
             else if (status == -5)
                 reportError ("valores constantes não podem ser modificados", "semântico", lineDict[lineCounter-1], line);
+            else if (status == -6)
+                reportError ("operação de indexacão inválida", "sintático", lineDict[lineCounter-1], line);
+            else if (status == -7)
+                reportError ("deve haver uma vírgula entre os dois operandos da instrução", "sintático", lineDict[lineCounter-1], line);
+            else if (status == -8)
+                reportError ("o deslocamento deve ser um número inteiro maior ou igual a zero", "sintático", lineDict[lineCounter-1], line);
+            else if (status == -9)
+                reportError ("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDict[lineCounter-1], line);
+            else if (status == -10)
+                reportError ("rótulos não podem começar com números", "léxico", lineDict[lineCounter-1], line);
+            else if (status == -11)
+                reportError ("caracter inválido encontrado no rótulo", "léxico", lineDict[lineCounter-1], line);
+            else if (status == -12)
+                reportError ("rótulo não pode ter nome de instrução ou diretiva", "sintático", lineDict[lineCounter-1], line);
+            else if (status == -13)
+                reportError ("estrutura da indexação incompleta", "sintático", lineDict[lineCounter-1], line);
+            else if (status == -14)
+                reportError ("acesso à seção de texto só é permitido para pulos", "semântico", lineDict[lineCounter-1], line);
+            else if (status == -15)
+                reportError ("só é aceito deslocamento zero para pulos", "semântico", lineDict[lineCounter-1], line);
+            else if (status <= -16) {
+                int pos = -(status+16); // recupera a posicao do rotulo
+                reportError ("indíce excede o tamanho do vetor "+labelList[pos].name, "semântico", lineDict[lineCounter-1], line);
+            }
                 
             if (section != 0)
                 reportError("instruções devem estar na seção de texto", "semântico", lineDict[lineCounter-1], line);
@@ -525,6 +652,9 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
                 int mcrLine = addrDict[address]; // linha do arquivo .mcr
                 int origLine = lineDict[mcrLine-1]; // linha do arquivo original
                 
+                // recupera o offset da instrucao
+                int offset = machineCode[address];
+                
                 if (auxInfo == 1) { // é uma divisão
                     if (labelList[i].isConst == 2)
                         reportError ("divisão por zero", "semântico", origLine, lines[mcrLine-1]);
@@ -536,7 +666,19 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
                         reportError ("valores constantes não podem ser modificados", "semântico", origLine, lines[mcrLine-1]);
                 }
                 
-                machineCode[address] = labelList[i].value;
+                // se não for pulo, não pode acessar a área de texto
+                if (labelList[i].vectSize == 0 && auxInfo != 2)
+                    reportError ("acesso à seção de texto só é permitido para pulos", "semântico", origLine, lines[mcrLine-1]);
+                
+                // nao se pode usar offset com pulos
+                if (auxInfo == 2 && offset != 0)
+                    reportError ("só é aceito deslocamento zero para pulos", "semântico", origLine, lines[mcrLine-1]);
+                
+                // checa se o tamanho do rotulo bate com o indice n (rotulo + n)
+                if (offset >= labelList[i].vectSize && auxInfo != 2 && labelList[i].vectSize > 0)
+                    reportError ("indíce excede o tamanho do vetor "+labelList[i].name, "semântico", origLine, lines[mcrLine-1]);
+                
+                machineCode[address] = labelList[i].value+offset;
                 
             }
             

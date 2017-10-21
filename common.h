@@ -8,7 +8,7 @@ std::string o2pre (std::string);
 std::string o2mcr (std::string);
 std::vector<Instr> getInstrList (std::string);
 std::vector<Dir> getDirList (std::string);
-int integerCheck (std::string&, int&);
+int integerCheck (std::string, int&);
 void reportError (std::string, std::string, int, std::string);
 int labelCheck (std::string, std::vector<Instr>&, std::vector<Dir>&);
 
@@ -200,7 +200,7 @@ integerCheck: checa se a string pode ser convertida em um numero sem erros
 entrada: string a ser convertida e inteiro que armazenará o resultado
 saida: inteiro que determina se houve ou não erro na conversão (1 ok, 0 erro)
 */
-int integerCheck (std::string &value, int &conv) {
+int integerCheck (std::string value, int &conv) {
     
     char *ptr = nullptr; // ponteiro para um caracter
     const char *cValue = value.c_str(); // array de caracteres equivalente à string
