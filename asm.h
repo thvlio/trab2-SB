@@ -176,6 +176,11 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
         std::string token;
         lineStream >> token;
         
+        char c;
+        lineStream.get(c); // le o espaço entre os tokens (ou um espaço vazio no final)
+        c = lineStream.peek(); // verifica qual é o próximo caracter a ser lido
+        std::cout << "c: " << c << "\n";
+        
         // retorna -1 se faltam argumentos (token vazio antes de chegar ao final do for)
         if (token.empty())
             return -1;
@@ -197,6 +202,7 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
         
         // se nao ta na tabela, bota na tabela e coloca a pendencia
         if (found < 0) {
+            
             Label label;
             label.name = token;
             label.isDefined = 0;
@@ -257,7 +263,7 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
         
     }
     
-    // le mais token
+    // le mais um token
     std::string token2;
     lineStream >> token2;
     
