@@ -18,7 +18,7 @@ O montador deve ser capaz de:
     - A diretiva CONST deve aceitar números positivos e negativos (inteiros e hexadecimal).
         [++++]
     - Deve ser possível trabalhar com vetores (SPACE com operando, e usar operações do tipo> LABEL + número).
-        [----]
+        [++++]
     - Capacidade de aceitar comentários indicados pelo símbolo ';'.
         [++++]
     - O comando COPY deve utilizar uma vírgula e um espaço entre os operandos (COPY A, B)
@@ -28,7 +28,7 @@ O montador deve ser capaz de:
     - Pode criar um rótulo, dar quebra de linha e continuar na linha depois (o rótulo seria equivalente a linha seguinte).
         [++++]
     - Identificar erros durante a montagem. Montando sempre o programa inteiro e mostrando na tela a(s) LINHA(s) e TIPO DOS ERROS (segundo a relação a seguir e indicar se é LÉXICO, SINTÁTICO OU SEMÂNTICO).
-        [----]
+        [++++]
     
 O programa deve detectar pelo menos os seguintes tipos de erro:
     - declarações e rótulos ausentes [++++]
@@ -44,7 +44,7 @@ O programa deve detectar pelo menos os seguintes tipos de erro:
     - dois rótulos na mesma linha [++++]
     - seção TEXT faltante [++++]
     - seção inválida [++++]
-    - tipo de argumento inválido [----]
+    - tipo de argumento inválido [++++]
     - modificação de um valor constante [++++]
     
 Assumir que as macros vão sempre estar declaradas antes de serem chamadas e dentro da seção de texto. Assumir QUE NÃO TEM MACRO QUE CHAMA OUTRA MACRO. As macros NÃO precisam receber parâmetros (não será feito teste de macro utilizando parâmetro de entrada).
