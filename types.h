@@ -58,8 +58,8 @@ struct Label {
     int isDefined; // se o rotulo ja foi ou nao definido
     std::vector<int> pendList; // lista de pendencias
     std::vector<int> auxInfoList; // lista de informacoes auxiliares
-    int isConst; // se é um const ou não
-    int vectSize; // tamanho do vetor, para o caso de ser um space
+    int isConst; // se é um const ou não (0: nao eh const, 1: eh const, 2: é const = 0)
+    int vectSize; // tamanho do vetor, para o caso de ser um space. 0 indica que o rótulo é da área de texto
     // metodos
     Label () {};
     Label (std::string nm, std::string eq): name(nm), equ(eq) {};

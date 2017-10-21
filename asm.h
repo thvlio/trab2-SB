@@ -77,8 +77,9 @@ int spaceCommand (std::stringstream &lineStream, std::string &labelName, std::ve
     }
     
     // extrai novo token (se houver mais um, o numero de argumentos eh invalido)
-    lineStream >> token2;
-    if (!token2.empty())
+    std::string token3;
+    lineStream >> token3;
+    if (!token3.empty())
         return -3;
     
     for (int i = 0; i < amount; ++i) { // coloca a reserva no codigo de maquina
@@ -117,7 +118,7 @@ int constCommand (std::stringstream &lineStream, std::string &labelName, std::ve
     
     // le o proximo token
     std::string token2;
-    lineStream token2;
+    lineStream >> token2;
     
     if (token2.empty()) // checa se foi dado um argumento
         return -1;
@@ -127,8 +128,9 @@ int constCommand (std::stringstream &lineStream, std::string &labelName, std::ve
         return -2;
         
     // le mais um token (se conseguir ler, o numero de argumento eh invalido)
-    lineStream >> token2;
-    if (!token2.empty())
+    std::string token3;
+    lineStream >> token3;
+    if (!token3.empty())
         return -1;
         
     partialMachineCode.push_back (constant); // adiciona a constante no código de máquina
@@ -141,7 +143,10 @@ int constCommand (std::stringstream &lineStream, std::string &labelName, std::ve
     } else {
         for (int i = 0; i < labelList.size(); ++i) {
             if (labelList[i].name == labelName) {
-                labelList[i].isConst = 1;
+                if (constant == 0)
+                    labelList[i].isConst = 2; // 2 indica que é zero
+                else
+                    labelList[i].isConst = 1;
                 labelList[i].vectSize = 1;
             }
         }
@@ -195,21 +200,54 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
             Label label;
             label.name = token;
             label.isDefined = 0;
+            
+            if (instr.name == "DIV")
+                label.auxInfoList.push_back(1); // 1 indica instrucao de divisao
+            else if (instr.name == "JMP" || instr.name == "JMPP" || instr.name == "JMPN" || instr.name == "JMPZ")
+                label.auxInfoList.push_back(2); // 2 indica instrucao de pulo
+            else if ((instr.name == "COPY" && i == 1) || instr.name == "STORE" || instr.name == "INPUT")
+                label.auxInfoList.push_back(3); // 3 indica instrucao modificando a memoria
+            else
+                label.auxInfoList.push_back(0); // 0 indica instrucao padrao
+                
             label.pendList.push_back(addrCounter);
             labelList.push_back(label);
-            partialMachineCode.push_back(0); // futuramente, colocar o numero a ser somado ao valor do rotulo, pra poder usar ROTULO + N
+            partialMachineCode.push_back(0); // futuramente, colocar o numero a ser somado ao valor do rotulo, pra poder usar ROTULO + N (depois verificar ao resolver a lista de pendencia se o tamanho esta batendo)
             
         } else {
             
-            // se ta na tabela e nao ta definido, coloca a pendencia
+            // se ta na tabela e nao ta definido, coloca mais uma pendencia
             if (!labelList[found].isDefined) {
+                
+                if (instr.name == "DIV")
+                    labelList[found].auxInfoList.push_back(1); // 1 indica instrucao de divisao
+                else if (instr.name == "JMP" || instr.name == "JMPP" || instr.name == "JMPN" || instr.name == "JMPZ")
+                    labelList[found].auxInfoList.push_back(2); // 2 indica instrucao de pulo
+                else if ((instr.name == "COPY" && i == 1) || instr.name == "STORE" || instr.name == "INPUT")
+                    labelList[found].auxInfoList.push_back(3); // 3 indica instrucao modificando a memoria
+                else
+                    labelList[found].auxInfoList.push_back(0); // 0 indica instrucao padrao
+                
                 labelList[found].pendList.push_back(addrCounter);
-                partialMachineCode.push_back(0); // futuramente, colocar o numero a ser somado ao valor do rotulo, pra poder usar ROTULO + N
+                partialMachineCode.push_back(0); // futuramente, colocar o numero a ser somado ao valor do rotulo, pra poder usar ROTULO + N (depois verificar ao resolver a lista de pendencia se o tamanho esta batendo)
             }
             
-            // se ta na tabela e ta definido, so copia o valor no codigo de maquina
+            // se ta na tabela e ta definido, ja indica os problemas e copia o endereço no codigo de maquina
             else {
-                int address = labelList[found].value;
+                
+                if (instr.name == "DIV") {
+                    if (labelList[found].isConst == 2)
+                        return -3; // -3 indica divisao por zero
+                } else if (instr.name == "JMP" || instr.name == "JMPP" || instr.name == "JMPN" || instr.name == "JMPZ") {
+                    if (labelList[found].vectSize != 0) // vectSize = 0 indica que o rotulo é da seção de texto
+                        return -4; // -4 indica pulo para a seção de dados
+                } else if ((instr.name == "COPY" && i == 1) || instr.name == "STORE" || instr.name == "INPUT") {
+                    if (labelList[found].isConst != 0)
+                        return -5; // -5 indica tentativa de modificar valor constante
+                }
+                
+                // checar se o tamanho do rotulo bate com o indice (rotulo + n)
+                int address = labelList[found].value; // eventualmente somar com algum valor
                 partialMachineCode.push_back(address);
             }
             
@@ -293,6 +331,7 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         else if (alreadyMentioned) {
             labelList[labelPos].value = addrCounter;
             labelList[labelPos].isDefined = 1;
+            labelList[labelPos].vectSize = 0; // indica que é rotulo da area de texto (pode mudar se for chamada uma diretiva da área de dados)
         }
         
         // nunca foi chamado nem definido (acrescenta novo rotulo definido)
@@ -301,6 +340,7 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
             label.name = token;
             label.value = addrCounter;
             label.isDefined = 1;
+            label.vectSize = 0;
             labelList.push_back(label);
         }
         
@@ -347,6 +387,13 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                     reportError("são esperados 2 argumentos para "+instr.name, "sintático", lineDict[lineCounter-1], line);
             } else if (status == -2)
                 reportError("os argumentos de "+instr.name+" devem ser separados por vírgula", "sintático", lineDict[lineCounter-1], line);
+            else if (status == -3)
+                reportError ("divisão por zero", "semântico", lineDict[lineCounter-1], line);
+            else if (status == -4)
+                reportError ("pulo para seção inválida", "semântico", lineDict[lineCounter-1], line);
+            else if (status == -5)
+                reportError ("valores constantes não podem ser modificados", "semântico", lineDict[lineCounter-1], line);
+                
             if (section != 0)
                 reportError("instruções devem estar na seção de texto", "semântico", lineDict[lineCounter-1], line);
             
@@ -354,11 +401,11 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         } else if (isDirective >= 0) {
             
             Dir dir = dirList[isDirective];
-            std::string token2;
-            lineStream >> token2;
             
             // se for SECTION, atualiza a informação da seção
             if (dir.name == "SECTION") {
+                std::string token2;
+                lineStream >> token2;
                 if (token2 == "TEXT") {
                     section = 0;
                     sectionText = 0;
@@ -376,6 +423,7 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                     reportError("a diretiva SPACE precisa ser precedida de um rótulo", "sintático", lineDict[lineCounter-1], line);
                 else if (status == -3)
                     reportError("é esperado um ou nenhum argumento para SPACE", "léxico", lineDict[lineCounter-1], line);
+                    
                 if (section != 1)
                     reportError("SPACE deve estar na seção de dados", "semântico", lineDict[lineCounter-1], line);
             
@@ -383,14 +431,14 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
             } else if (dir.name == "CONST") {
                 int status = constCommand (lineStream, labelNameBackup, partialMachineCode, addrCounter, labelList);
                 if (status == -1)
-                    reportError("é esperado um argumento para a reserva de constante", "sintático", lineDict[lineCounter-1], line);
+                    reportError("é esperado 1 argumento para a reserva de constante", "sintático", lineDict[lineCounter-1], line);
                 else if (status == -2)
                     reportError("número constante inválido", "léxico", lineDict[lineCounter-1], line);
                 else if (status == -3)
                     reportError("a diretiva CONST precisa ser precedida de um rótulo", "sintático", lineDict[lineCounter-1], line);
+                    
                 if (section != 1)
                     reportError("CONST deve estar na seção de dados", "semântico", lineDict[lineCounter-1], line);   
-                
             }
         }
     }
@@ -443,27 +491,51 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
         
     }
     
-    // procura por rótulos que não foram definidos
+    if (sectionText == -1)
+        reportError ("seção texto é obrigatória", "semântico", -1, "");
+    
+    // resolve as listas de pendências (e reporta erros)
     for (int i = 0; i < labelList.size(); ++i) {
-        if (!labelList[i].isDefined) {
+        
+        if (!labelList[i].isDefined) { // rotulo nunca foi definido
+            
             for (int j = 0; j < labelList[i].pendList.size(); ++j) {
                 int mcrLine = addrDict[labelList[i].pendList[j]]; // linha do arquivo .mcr
                 int origLine = lineDict[mcrLine-1]; // linha do arquivo original
                 reportError ("rótulo "+labelList[i].name+" não definido", "semântico", origLine, lines[mcrLine-1]);
             }
+            
+        } else {
+            
+            for (int j = 0; j < labelList[i].pendList.size(); ++j) {
+                
+                // pega o proximo endereço na lista de pendencias
+                int address = labelList[i].pendList[j];
+                
+                // pega a informacao adicional para indicar problemas
+                int auxInfo = labelList[i].auxInfoList[j];
+                
+                // ja faz uma traducao das linhas
+                int mcrLine = addrDict[address]; // linha do arquivo .mcr
+                int origLine = lineDict[mcrLine-1]; // linha do arquivo original
+                
+                if (auxInfo == 1) { // é uma divisão
+                    if (labelList[i].isConst == 2)
+                        reportError ("divisão por zero", "semântico", origLine, lines[mcrLine-1]);
+                } else if (auxInfo == 2) { // é um pulo
+                    if (labelList[i].vectSize != 0)
+                        reportError ("pulo para seção inválida", "semântico", origLine, lines[mcrLine-1]);
+                } else if (auxInfo == 3) { // tá modificando o rótulo
+                    if (labelList[i].isConst != 0)
+                        reportError ("valores constantes não podem ser modificados", "semântico", origLine, lines[mcrLine-1]);
+                }
+                
+                machineCode[address] = labelList[i].value;
+                
+            }
+            
         }
-    } 
-    
-    if (sectionText == -1)
-        reportError ("seção texto é obrigatória", "semântico", -1, "");
-    
-    // resolve as listas de pendências
-    for (int i = 0; i < labelList.size(); ++i) {
-        while (!labelList[i].pendList.empty()) {
-            int index = labelList[i].pendList.back();
-            labelList[i].pendList.pop_back();
-            machineCode[index] = labelList[i].value;
-        }
+        
     }
     
     // escreve o codigo de maquina final no arquivo
