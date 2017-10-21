@@ -24,14 +24,14 @@ O montador deve ser capaz de:
     - O comando COPY deve utilizar uma vírgula e um espaço entre os operandos (COPY A, B)
         [----]
     - Ser capaz de aceitar MACROS (mais detalhes serão descritos a seguir).
-        [----]
+        [++++]
     - Pode criar um rótulo, dar quebra de linha e continuar na linha depois (o rótulo seria equivalente a linha seguinte).
         [++++]
     - Identificar erros durante a montagem. Montando sempre o programa inteiro e mostrando na tela a(s) LINHA(s) e TIPO DOS ERROS (segundo a relação a seguir e indicar se é LÉXICO, SINTÁTICO OU SEMÂNTICO).
         [----]
     
 O programa deve detectar pelo menos os seguintes tipos de erro:
-    - declarações e rótulos ausentes [----]
+    - declarações e rótulos ausentes [++++]
     - declarações e rótulos repetidos [++++]
     - pulo para rótulos inválidos [----]
     - pulo para seção errada [----]
