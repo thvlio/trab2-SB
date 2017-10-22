@@ -5,7 +5,7 @@
 #include "asm.h"
 
 // compilar com
-// g++ -std=c++11 main.cpp -o main.out
+// g++ -std=c++11 -Wall -I include main.cpp -o main.out
 // ou entao com CTRL SHIFT B no VSCODE
 
 // rodar com
@@ -14,8 +14,8 @@
 int main (int argc, char *argv[]) {
     
     // nomes dos arquivos contendo as tabelas de intrucoes e diretivas
-    std::string instrFileName ("tabInstr.txt"),
-        dirFileName ("tabDir.txt");
+    std::string instrFileName ("tabl/tabInstr.txt"),
+        dirFileName ("tabl/tabDir.txt");
     
     // checa se houveram erros
     if (errorCheck(argc, argv, instrFileName, dirFileName) == -1)
@@ -51,7 +51,7 @@ int main (int argc, char *argv[]) {
     // faz o dicionario "composto"
     for (int i = 0; i < lineDictMcr.size(); ++i)
         lineDict.push_back(lineDictPre[lineDictMcr[i]-1]);
-        
+    
     // passagem normal
     if (operation == "-o")
         assembleCode (mcrFileName, outFileName, lineDict, instrList, dirList);

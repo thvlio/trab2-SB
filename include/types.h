@@ -18,6 +18,7 @@ struct Instr;
 struct Dir;
 struct Label;
 struct Macro;
+struct Error;
 
 
 
@@ -77,4 +78,16 @@ struct Macro {
     // metodos
     Macro () {};
     Macro (std::string nm, std::string df, int ln, int nl): name(nm), definition(df), initLine(ln), numLines(nl) {};
+};
+
+
+
+// Error: armazrna um erro e suas informações
+struct Error {
+    std::string message; // mensagem do erro
+    std::string type; // tipo de erro
+    int lineNum; // linha do erro
+    std::string line; // conteudo da linha do erro
+    Error () {};
+    Error (std::string msg, std::string tp, int lnn, std::string ln): message(msg), type(tp), lineNum(lnn), line(ln) {};
 };
