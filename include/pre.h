@@ -40,7 +40,7 @@ void preReadLine (std::string &line, std::ifstream &asmFile, std::vector<Label> 
         line = line.substr(1);
     
     // itera na lista de rotulos definidos procurando por um desses rotulos na linha
-    for (int i = 0; i < labelList.size(); ++i) {
+    for (unsigned int i = 0; i < labelList.size(); ++i) {
         
         // tamanho do nome do rótulo
         int nameSize = labelList[i].name.size();

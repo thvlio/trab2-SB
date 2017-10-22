@@ -260,19 +260,19 @@ int labelCheck (std::string label, std::vector<Instr> &instrList, std::vector<Di
         return -2;
     
     // verifica se só existem números, caracteres ou _ na string
-    for (int i = 0; i < label.size(); ++i) {
+    for (unsigned int i = 0; i < label.size(); ++i) {
         if ((label[i] < 'A' || label[i] > 'Z') && (label[i] < '0' || label[i] > '9') && (label[i] != '_'))
             return -3; 
     }
     
     // verifica se o rótulo tem o nome de uma instrução
-    for (int i = 0; i < instrList.size(); ++i) {
+    for (unsigned int i = 0; i < instrList.size(); ++i) {
         if (label == instrList[i].name)
             return -4;
     }
     
     // verifica se o rótulo tem o nome de uma diretiva
-    for (int i = 0; i < dirList.size(); ++i) {
+    for (unsigned int i = 0; i < dirList.size(); ++i) {
         if (label == dirList[i].name)
             return -4;
     }

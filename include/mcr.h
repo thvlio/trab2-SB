@@ -58,6 +58,7 @@ int createMacro (std::string &line, std::ifstream &preFile, std::string &token, 
     // nao escreve a linha que define o rotulo da macro
     line.clear();
     
+    return 0;
 }
 
 
@@ -71,7 +72,7 @@ void mcrSearchAndReplace (std::string &line, std::string &token, std::vector<Mac
     
     int found = 0;
     macroCall = -1;
-    for (int i = 0; ((i < macroList.size()) && (!found)); ++i) {
+    for (unsigned int i = 0; ((i < macroList.size()) && (!found)); ++i) {
         if (token == macroList[i].name) {
             // se encontrar, escreve a definicao no lugar da linha atual
             line = macroList[i].definition;
@@ -112,7 +113,7 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
         // verifica se esse rótulo já foi definido como uma macro
         token.pop_back();
         int redefinition = 0;
-        for (int i = 0; i < macroList.size(); ++i) {
+        for (unsigned int i = 0; i < macroList.size(); ++i) {
             if (macroList[i].name == token)
                 redefinition = 1;
         }

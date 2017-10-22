@@ -98,7 +98,7 @@ int spaceCommand (std::stringstream &lineStream, std::string &labelName, std::ve
         
     } else {
         // procura o rótulo e ajusta as características
-        for (int i = 0; i < labelList.size(); ++i) {
+        for (unsigned int i = 0; i < labelList.size(); ++i) {
             if (labelList[i].name == labelName) {
                 labelList[i].isConst = 0;
                 labelList[i].vectSize = amount;
@@ -146,7 +146,7 @@ int constCommand (std::stringstream &lineStream, std::string &labelName, std::ve
     
     // se foi, arruma o rotulo
     } else {
-        for (int i = 0; i < labelList.size(); ++i) {
+        for (unsigned int i = 0; i < labelList.size(); ++i) {
             if (labelList[i].name == labelName) {
                 if (constant == 0)
                     labelList[i].isConst = 2; // 2 indica que é zero
@@ -347,7 +347,7 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
         
         // procura o token na tabela de simbolos
         int found = -1;
-        for (int i = 0; (i < labelList.size()) && (found < 0); ++i) {
+        for (unsigned int i = 0; (i < labelList.size()) && (found < 0); ++i) {
             if (token == labelList[i].name)
                 found = i;
         }
@@ -497,7 +497,7 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         int alreadyDefined = 0;
         int alreadyMentioned = 0;
         int labelPos = -1;
-        for (int i = 0; i < labelList.size(); ++i) {
+        for (unsigned int i = 0; i < labelList.size(); ++i) {
             if (labelList[i].name == token) {
                 alreadyMentioned = 1;
                 labelPos = i;
@@ -543,12 +543,12 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
     
     // agora que lidou com os possiveis rotulos, analisa o primeiro token e ve se é instrucao ou diretiva
     int isInstruction = -1;
-    for (int i = 0; i < instrList.size(); ++i) {
+    for (unsigned int i = 0; i < instrList.size(); ++i) {
         if (token == instrList[i].name)
             isInstruction = i;
     }
     int isDirective = -1;
-    for (int i = 0; i < dirList.size(); ++i) {
+    for (unsigned int i = 0; i < dirList.size(); ++i) {
         if (token == dirList[i].name)
             isDirective = i;
     }
@@ -657,7 +657,7 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
     }
     
     // coloca os endereços no dicionario de endereços
-    for (int i = 0; i < partialMachineCode.size(); ++i)
+    for (unsigned int i = 0; i < partialMachineCode.size(); ++i)
         addrDict.push_back(lineCounter);
     
     return partialMachineCode;
@@ -697,7 +697,7 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
         std::vector<int> partialMachineCode = asmParser(mcrFile, labelList, lineCounter, addrCounter, lineDict, instrList, dirList, section, sectionText, addrDict, lines);
         
         // anexa os codigos parciais
-        for (int i = 0; i < partialMachineCode.size(); ++i)
+        for (unsigned int i = 0; i < partialMachineCode.size(); ++i)
             machineCode.push_back(partialMachineCode[i]);
         
         lineCounter++;
@@ -708,11 +708,11 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
         reportError ("seção texto é obrigatória", "semântico", -1, "");
     
     // resolve as listas de pendências (e reporta erros)
-    for (int i = 0; i < labelList.size(); ++i) {
+    for (unsigned int i = 0; i < labelList.size(); ++i) {
         
         if (!labelList[i].isDefined) { // rotulo nunca foi definido
             
-            for (int j = 0; j < labelList[i].pendList.size(); ++j) {
+            for (unsigned int j = 0; j < labelList[i].pendList.size(); ++j) {
                 int mcrLine = addrDict[labelList[i].pendList[j]]; // linha do arquivo .mcr
                 int origLine = lineDict[mcrLine-1]; // linha do arquivo original
                 reportError ("rótulo "+labelList[i].name+" não definido", "semântico", origLine, lines[mcrLine-1]);
@@ -720,7 +720,7 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
             
         } else {
             
-            for (int j = 0; j < labelList[i].pendList.size(); ++j) {
+            for (unsigned int j = 0; j < labelList[i].pendList.size(); ++j) {
                 
                 // pega o proximo endereço na lista de pendencias
                 int address = labelList[i].pendList[j];
@@ -767,7 +767,7 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     }
     
     // escreve o codigo de maquina final no arquivo
-    for (int i = 0; i < machineCode.size(); ++i)
+    for (unsigned int i = 0; i < machineCode.size(); ++i)
         outFile << machineCode[i] << " ";
     
     mcrFile.close();

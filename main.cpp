@@ -5,7 +5,7 @@
 #include "asm.h"
 
 // compilar com
-// g++ -std=c++11 -Wall -I include main.cpp -o main.out
+// g++ -std=c++11 -Wall main.cpp -o main.out
 // ou entao com CTRL SHIFT B no VSCODE
 
 // rodar com
@@ -49,7 +49,7 @@ int main (int argc, char *argv[]) {
         expandMacros (preFileName, mcrFileName, lineDictMcr, lineDictPre, instrList, dirList);
     
     // faz o dicionario "composto"
-    for (int i = 0; i < lineDictMcr.size(); ++i)
+    for (unsigned int i = 0; i < lineDictMcr.size(); ++i)
         lineDict.push_back(lineDictPre[lineDictMcr[i]-1]);
     
     // passagem normal
