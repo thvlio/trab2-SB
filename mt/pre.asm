@@ -6,18 +6,19 @@ L4:
     equ       l3
 SECTION TEXT
 IF L1
-LOAD SPACE ;faz esta operação se L1 for verdadeiro
+LOAD n;faz esta operação se L1 for verdadeiro
 IF L2
-    INPUT SPACE ;faz esta operação se L2 for verdadeiro
+    INPUT n;faz esta operação se L2 for verdadeiro
 IF L3
-ADD L4
 
 SECTION DATA
 N: SPACE
 
 ;arquivo do saida pre-processado:
 ;SECTION TEXT
-;LOAD SPACE
-;ADD 1
+;LOAD N
 ;SECTION DATA
 ;N: SPACE
+
+;codigo de maquina
+;10 2 0

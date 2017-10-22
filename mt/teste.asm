@@ -16,9 +16,9 @@ DIV_N:
 	STORE N
 	END
 IF L1
-LOAD SPACE
+LOAD N
 IF L2
-INPUT SPACE
+INPUT N
 IF L1
 MUL_N
 IF L2
@@ -29,8 +29,11 @@ N: SPACE
 
 ;arquivo de saida depois de passar as macros:
 ;SECTION TEXT
-;LOAD SPACE
+;LOAD N
 ;MULT N
 ;STORE N
 ;SECTION DATA
 ;N: SPACE
+
+;codigo de maquina
+;10 6 3 6 11 6 0

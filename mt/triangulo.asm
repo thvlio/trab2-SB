@@ -15,3 +15,5 @@ SECTION TEXT
 		OUTPUT	R
 		STOP
 
+;codigo de maquina
+;0 0 0 2 12 0 12 1 10 0 3 1 4 3 11 2 13 2 14
