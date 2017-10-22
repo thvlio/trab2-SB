@@ -132,6 +132,8 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
                 reportError("caracter inválido encontrado no rótulo", "léxico", lineDictPre[lineCounter-1], line);
             else if (valid == -4)
                 reportError("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDictPre[lineCounter-1], line);
+            else if (valid == -5)
+                reportError("declaração de rótulo vazia", "sintático", lineDictPre[lineCounter-1], line);
             
             // cria uma macro na lista
             int status = createMacro (line, preFile, token, macroList, lineCounter);

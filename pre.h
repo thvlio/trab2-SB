@@ -219,6 +219,8 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
                 reportError("caracter inválido encontrado no rótulo", "léxico", lineCounter, line);
             else if (valid == -4)
                 reportError("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineCounter, line);
+            else if (valid == -5)
+                reportError("declaração de rótulo vazia", "sintático", lineCounter, line);
             
             // executa o comando da diretiva
             int status = equCommand (lineStream, labelList, token);

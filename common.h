@@ -228,8 +228,14 @@ void reportError (std::string message, std::string type, int lineNum, std::strin
     escReset = "\033[0m";
     
     // mostra o erro
-    std::cout << escRed << "Erro" << escReset << " na linha " << escRed << lineNum << escReset << " do arquivo de entrada: ";
-    std::cout << escYellow << message << escReset << " (erro " << type << ")" << "\n" << "\t" << escBlue << line << escReset << "\n\n";
+    if (lineNum == -1) { // para o caso de não ter linha específica
+        std::cout << escRed << "Erro" << escReset << " no arquivo de entrada: ";
+        std::cout << escYellow << message << escReset << " (erro " << type << ")" << "\n\n";
+    } else { // quando tem linha específica
+        std::cout << escRed << "Erro" << escReset << " na linha " << escRed << lineNum << escReset << " do arquivo de entrada: ";
+        std::cout << escYellow << message << escReset << " (erro " << type << ")" << "\n" << "\t" << escBlue << line << escReset << "\n\n";
+    }
+    
 }
 
 
@@ -241,10 +247,14 @@ saida: inteiro indicando se rotulo é válido
 */
 int labelCheck (std::string label, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
     
+    // checa se o rótulo está vazio
+    if (label.empty())
+        return -5;
+    
     // checa o tamanho da string
     if (label.size() > 100)
         return -1;
-
+    
     // checa se o primeiro caracter é um número
     if (label.front() >= '0' && label.front() <= '9')
         return -2;

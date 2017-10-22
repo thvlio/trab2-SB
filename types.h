@@ -18,7 +18,7 @@ struct Instr;
 struct Dir;
 struct Label;
 struct Macro;
-struct Simbolo;
+
 
 
 /*      DEFINIÇÕES DOS TIPOS        */
@@ -77,18 +77,4 @@ struct Macro {
     // metodos
     Macro () {};
     Macro (std::string nm, std::string df, int ln, int nl): name(nm), definition(df), initLine(ln), numLines(nl) {};
-};
-
-
-
-// a struct Label ja implementa estas informacoes, nao?
-struct Simbolo{
-    //membros
-    std::string label;
-    int value;
-    bool def;
-    int list;
-    //metodos
-    Simbolo () {};
-    Simbolo (std:: string lb, int vl, bool df, int lt): label(lb), value(vl), def(df), list(lt) {};
 };
