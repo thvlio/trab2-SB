@@ -1,11 +1,12 @@
 # trab1-SB
 
-Trabalho 1 de Software Básico - 2017/2
+Trabalho 2 de Software Básico - 2017/2
 
 Grupo:
 * Thúlio Noslen Silva Santos - 14/0164090
 * Daniel Amaral Ribeiro - 14/0135219
-    
+
+# Montador
 Para compilar, use:
 * g++ -std=c++11 -Wall main.cpp `nome.out`
 * `nome.out`: o nome do arquivo executável (ex: `main.out`)
@@ -20,3 +21,9 @@ Para executar, use:
 Exemplo de compilação e execução:
 * `g++ -std=c++11 -Wall main.cpp main.out`
 * `./main.out -o bin.asm bin.o`
+
+# Ligador
+.
+
+# Carregador
+.
