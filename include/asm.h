@@ -194,6 +194,10 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
     partialMachineCode.push_back(instr.opcode);
     addrCounter++;
     
+    int firArgPos = pos,
+        secArgPos = 0,
+        argPos = 0;
+    
     // le os argumentos esperados pela funcao
     for (int i = 0; i < instr.numArg; ++i) {
         
@@ -202,37 +206,34 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
         lineStream >> token;
         
         // retorna -1 se faltam argumentos (token vazio antes de chegar ao final do for)
-        if (token.empty())
+        if (token.empty()) // pos += 0
             return -1;
-            
+        
         // checa se esta tentando declarar outro rotulo
-        if (token.back() == ':') {
-            token.pop_back();
-            int valid = labelCheck(token, instrList, dirList);
-            if (valid == 0) // se for um rotulo valido, estava tentando declarar dois rotulos
-                return -17;
-            else // se nao era, so fala que o rotulo é invalido
-                return -11;
-        }
+        if (token.back() == ':') // pos += 0
+            return -17;
         
-        int offset; // offset para acesso aos vetores
-        
+        int offset = 0; // offset para acesso aos vetores
+            
         // se for COPY (2 args) ou qualquer instrução com mais de um argumento (atualmente só tem o COPY mesmo), verifica todos menos o último argumento esperado (somente o 1o, no caso de COPY)
         if (instr.numArg > 1 && i < instr.numArg-1) {
             
             // procura virgula no meio do token
             std::size_t comma = token.find(",");
             if (comma != std::string::npos) {
-                if (comma != 0 && comma != token.size()-1)
+                if (comma != 0 && comma != token.size()-1) {
+                    pos += comma;
                     return -18; // tá no meio do token, entao nao separou por virgula do segundo argumento
+                }
             }
             
-            if (token.front() == ',')
+            if (token.front() == ',') // pos += 0
                 return -20; // virgula no começo do token = falta argumento antes
                 
             // procura sinal de soma no token
             std::size_t add = token.find("+");
             if (add != std::string::npos) {
+                pos += add;
                 if (add == 0)
                     return -13; // indexacao incompleta
                 else
@@ -244,82 +245,105 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
                 
                 token.pop_back(); // tira a virgula
                 
-                if (token.empty())
-                    return -1; // se tiver colocado só uma vírgula
+                if (token.empty()) // pos += 0
+                    return -20; // se tiver colocado só uma vírgula
                 
-                int aux; // checa se está tentando se fazer endereçamento imediato
+                int aux = 0; // checa se está tentando fazer endereçamento imediato
                 int status = integerCheck (token, aux);
-                if (status == 1)
+                if (status == 1) // pos += 0
                     return -16;
                 
-                int valid = labelCheck(token, instrList, dirList); // procura erros no rotulo
-                if (valid <= -1 && valid >= -4)
+                aux = 0;
+                int valid = labelCheck(token, instrList, dirList, aux); // procura erros no rotulo
+                if (valid <= -1 && valid >= -4) {
+                    pos += aux;
                     return valid-8;
-                offset = 0; // ta acessando a posicao 0
+                }
+                
+                // ajeita a posicao para o segundo argumento
+                pos = pos + token.size()+1 + 1;
+                secArgPos = pos;
                 
             // se nao tiver virgula
             } else {
                 
-                int aux; // checa se está tentando se fazer endereçamento imediato
+                int aux = 0; // checa se está tentando se fazer endereçamento imediato
                 int status = integerCheck (token, aux);
-                if (status == 1)
+                if (status == 1) // pos += 0
                     return -16;
                 
-                int valid = labelCheck(token, instrList, dirList); // procura erros no rotulo
-                if (valid <= -1 && valid >= -4)
+                aux = 0;
+                int valid = labelCheck(token, instrList, dirList, aux); // procura erros no rotulo
+                if (valid <= -1 && valid >= -4) {
+                    pos += aux;
                     return valid-8;
+                }
+                
+                // avança a posicao da seta para o proximo token
+                pos = pos + token.size() + 1;
                 
                 // le o proximo token (esperado que seja um +)
                 std::string token2;
                 lineStream >> token2;
-                if (token2.empty())
-                    return -1;
-                if (token2.front() == ',')
+                
+                if (token2.empty()) // pos += 0
+                    return -1; // falta um argumento para copy
+                
+                if (token2.front() == ',') // pos += 0
                     return -2; // se for virgula, avisa que a virgula nao deve ser separada por espaço do 1o operador
+                    
                 else if (token2 != "+") {
-                    int valid = labelCheck(token2, instrList, dirList); // procura erros no rotulo
-                    if (valid == 0)
+                    int auxPos;
+                    int valid = labelCheck(token2, instrList, dirList, auxPos); // procura erros no rotulo
+                    if (valid == 0) // pos += 0
                         return -7; // faltando virgula entre os operandos
-                    else if (token2.front() == '+')
-                        return -19; // deve separar o sinal de soma por espaços
+                    else {
+                        if (token2.front() == '+') // pos += 0
+                            return -19; // deve separar o sinal de soma por espaços
+                        else // pos += 0
+                            return -6; // operacao de indexacao invalida
+                    }
                 }
                 
                 // le o proximo token (esperado que seja um numero valido)
                 std::string token3;
                 lineStream >> token3;
-                if (token3.empty())
+                
+                // ajeita a posicao de novo
+                pos = pos + token2.size() + 1;
+                
+                if (token3.empty()) // pos += 0
                     return -13;
-                    
+                
                 // esperado que tenha uma virgula depois do numero
                 if (token3.back() == ',') {
                     token3.pop_back();
-                    if (token3.empty())
+                    if (token3.empty()) // pos += 0
                         return -13;
                     int status = integerCheck (token3, offset);
                     if ((status == 1 && offset < 0) || status == 0)  // tem que ser maior ou igual a 0
-                        return -8;
+                        return -8; // pos += 0
                         
                 // se nao tem virgula
                 } else { 
                     int status = integerCheck (token3, offset);
                     if ((status == 1 && offset < 0) || status == 0)  // tem que ser maior ou igual a 0
-                        return -8;
+                        return -8; // pos += 0
                     //  se for valido, le o proximo token (esse token ta errado de qualquer forma)
                     std::string token4;
                     lineStream >> token4;
-                    if (token4.empty())
+                    pos = pos + token3.size() + 1;
+                    if (token4.empty()) // pos += 0
                         return -1; // de estiver vazio, o numero de argumento esta errado
-                    if (token4 == ",")
+                    if (token4 == ",") // pos += 0
                         return -2; // se o token for um virgula, nao deveria ter sido serpada por espaço
-                    else {
-                        int valid = labelCheck(token4, instrList, dirList); // procura erros no rotulo
-                        if (valid == 0)
-                            return -7; // faltando virgula entre os operandos
-                        else
-                            return -6; // op de indexacao invalida/rotulo invalido
-                    }
-                        
+                    else // pos += 0
+                        return -7; // faltando virgula entre os operandos
                 }
+                
+                // ajeita a posicao para o segundo argumento
+                pos = pos + token3.size()+1 + 1;
+                secArgPos = pos;
             }
             
         } else { // se nao for esperada uma virgula
@@ -327,88 +351,124 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
             // procura virgula no meio do token
             std::size_t comma = token.find(",");
             if (comma != std::string::npos) {
-                if (comma != 0 && comma != token.size()-1)
+                if (comma != 0 && comma != token.size()-1) {
+                    pos += comma;
                     return -18; // tá no meio do token, entao nao separou por virgula do segundo argumento
+                }
             }
             
             // procura sinal de soma no token
             std::size_t add = token.find("+");
             if (add != std::string::npos) {
+                pos += add;
                 if (add == 0)
                     return -13; // indexacao incompleta
                 else
                     return -19; // precisa ter espaço entre a soma
             }
-
-            if (token.front() == ',')
+            
+            if (token.front() == ',') // pos += 0
                 return -20; // virgula no começo do token = falta argumento
             
-            int aux; // checa se está tentando se fazer endereçamento imediato
+            // se no final tiver virgula, ve se foi colocado mais um argumento (invalido)
+            if (token.back() == ',') {
+                std::string token2;
+                lineStream >> token2;
+                if (!token2.empty()) {
+                    pos = pos + token.size() + 1;
+                    return -1; // numero de argumentos invalido
+                }
+            }
+            
+            int aux; // checa se está tentando fazer endereçamento imediato
             int status = integerCheck (token, aux);
-            if (status == 1)
+            if (status == 1) // pos += 0
                 return -16;
-                
+            
+            // procura erros no rotulo
+            aux = 0;
+            int valid = labelCheck(token, instrList, dirList, aux);
+            if (valid <= -1 && valid >= -4) {
+                pos += aux;
+                return valid-8;    
+            }
+            
+            pos = pos + token.size() + 1;
+            
             // le o proximo token
             std::string token2;
             lineStream >> token2;
             
-            // se no final tiver virgula, ve se foi colocado mais um argumento (invalido)
-            if (token.back() == ',' && !token2.empty())
-                return -1;
-            
-            // procura erros no rotulo (se tinha virgula e nao tinha argumento a mais, da erro aqui)
-            int valid = labelCheck(token, instrList, dirList);
-            if (valid <= -1 && valid >= -4)
-                return valid-8;
-            
-            if (token2.empty())
-                offset = 0; // se ta no final da linha, nao tem offset
-            
-            else if (token2 == "+") {
+            if (token2 == "+" && !token2.empty()) {
                 
-                // le o ultimo token
+                // le mais um token
                 std::string token3;
                 lineStream >> token3;
-                if (token3.empty())
+                
+                pos = pos + token2.size() + 1;
+                
+                if (token3.empty()) // pos += 0
                     return -13;
+                
+                if (token3.front() == ',') // pos += 0
+                    return -20; // virgula no começo do token = falta argumento
+                
+                int popped = 0;
+                if (token3.back() == ',') {
+                    popped = 1;
+                    token3.pop_back();
+                }    
+                
+                // verica se o numero eh valido
+                int status = integerCheck (token3, offset);
+                if ((status == 1 && offset < 0) || status == 0)  // tem que ser maior ou igual a 0
+                    return -8;
+                
+                if (popped) 
+                    token3.push_back(',');
                     
                 // se no final tiver virgula, ve se foi colocado mais um argumento (invalido)
                 if (token3.back() == ',') {
                     std::string token4;
                     lineStream >> token4;
-                    if (!token4.empty())
+                    if (!token4.empty()) {
+                        pos = pos + token3.size() + 1;
                         return -1;
+                    }
                 }
-                    
-                // verica se o numero eh valido
-                int status = integerCheck (token3, offset);
-                if ((status == 1 && offset < 0) || status == 0)  // tem que ser maior ou igual a 0
-                    return -8;
             
-            } else {
+            } else if (!token2.empty()) {
                 
-                if (token2.front() == '+')
+                if (token2.front() == '+') // pos += 0
                     return -19; // deve separar o sinal de soma por espaços
                 
                 // checa se esta tentando declarar outro rotulo
                 if (token2.back() == ':') {
                     token2.pop_back();
-                    int valid = labelCheck(token2, instrList, dirList);
+                    int aux;
+                    int valid = labelCheck(token2, instrList, dirList, aux);
                     if (valid == 0) // se for um rotulo valido, estava tentando declarar dois rotulos
-                        return -17;
+                        return -17; // pos += 0
                     else // se nao era, operacao de indexacao invalida
-                        return -6;
+                        return -6; // pos += 0
                 } else {
-                    int valid = labelCheck(token2, instrList, dirList); // checa se eh um rotulo valido
-                    if (valid == 0)
+                    int aux;
+                    int valid = labelCheck(token2, instrList, dirList, aux); // checa se eh um rotulo valido
+                    if (valid == 0) // pos += 0
                         return -1; // se for, numero de argumento invalido
-                    else
+                    else // pos += 0
                         return -6; // se nao for, indexacao invalida
                 }
                 
             }
             
         }
+        
+        // ajusta a posicao do argumento
+        if (i == 0)
+            argPos = firArgPos;
+        else
+            argPos = secArgPos;
         
         // procura o token na tabela de simbolos
         int found = -1;
@@ -432,6 +492,8 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
                 label.auxInfoList.push_back(3); // 3 indica instrucao modificando a memoria
             else
                 label.auxInfoList.push_back(0); // 0 indica instrucao padrao
+            
+            label.posList.push_back(argPos);
                 
             label.pendList.push_back(addrCounter);
             labelList.push_back(label);
@@ -451,12 +513,17 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
                 else
                     labelList[found].auxInfoList.push_back(0); // 0 indica instrucao padrao
                 
+                labelList[found].posList.push_back(argPos);
+                    
                 labelList[found].pendList.push_back(addrCounter);
                 partialMachineCode.push_back(offset);
             }
             
             // se ta na tabela e ta definido, ja indica os problemas e copia o endereço no codigo de maquina
             else {
+                
+                int posBkp = pos;
+                pos = argPos;
                 
                 if (instr.name == "DIV") {
                     if (labelList[found].isConst == 2)
@@ -473,6 +540,8 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
                 if (labelList[found].vectSize == 0 && instr.name != "JMP" && instr.name != "JMPP" && instr.name != "JMPN" && instr.name != "JMPZ")
                     return -14;
                 
+                pos = pos + token.size() + 1 + 1 + 1;
+                    
                 // nao se pode usar offset com pulos
                 if (instr.opcode >= 5 && instr.opcode <= 8) {
                     if (offset != 0)
@@ -483,6 +552,7 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
                 if (offset >= labelList[found].vectSize && labelList[found].vectSize > 0)
                     return -(found+21); // retorna onde ta o rotulo
                 
+                pos = posBkp;
                 int address = labelList[found].value;
                 partialMachineCode.push_back(address+offset);
             }
@@ -500,16 +570,17 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
     // checa se esta tentando declarar outro rotulo
     if (token2.back() == ':') {
         token2.pop_back();
-        int valid = labelCheck(token2, instrList, dirList);
+        int auxPos;
+        int valid = labelCheck(token2, instrList, dirList, auxPos);
         if (valid == 0) // se for um rotulo valido, estava tentando declarar dois rotulos
-            return -17;
+            return -17; // pos += 0
         else // se nao era, so fala que o rotulo é invalido
-            return -11;
+            return -11; // pos += 0
     }
     
     // se houver mais um token, a quantidade de argumentos é maior q o esperado
     if (!token2.empty())
-        return -1;
+        return -1; // pos += 0
     
     return 0;
 }
@@ -669,7 +740,7 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
             else if (status == -5)
                 errorList.push_back(Error ("valores constantes não podem ser modificados", "semântico", lineDict[lineCounter-1], line, pos));
             else if (status == -6)
-                errorList.push_back(Error ("operação de indexacão inválida", "sintático", lineDict[lineCounter-1], line, pos));
+                errorList.push_back(Error ("operação de indexacão inválida, somente a soma é válida", "sintático", lineDict[lineCounter-1], line, pos));
             else if (status == -7)
                 errorList.push_back(Error ("deve haver uma vírgula entre os dois operandos da instrução", "sintático", lineDict[lineCounter-1], line, pos));
             else if (status == -8)
@@ -847,9 +918,10 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
         if (!labelList[i].isDefined) { // rotulo nunca foi definido
             
             for (unsigned int j = 0; j < labelList[i].pendList.size(); ++j) {
+                int argPos = labelList[i].posList[j];
                 int mcrLine = addrDict[labelList[i].pendList[j]]; // linha do arquivo .mcr
                 int origLine = lineDict[mcrLine-1]; // linha do arquivo original
-                errorList.push_back(Error ("rótulo "+labelList[i].name+" não definido", "semântico", origLine, lines[mcrLine-1]));
+                errorList.push_back(Error ("rótulo "+labelList[i].name+" não definido", "semântico", origLine, lines[mcrLine-1], argPos));
             }
             
         } else {
@@ -869,28 +941,33 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
                 // recupera o offset da instrucao
                 int offset = machineCode[address];
                 
+                // recupera a posição do rótulo na linha
+                int argPos = labelList[i].posList[j];
+                
                 if (auxInfo == 1) { // é uma divisão
                     if (labelList[i].isConst == 2)
-                        errorList.push_back(Error ("divisão por zero", "semântico", origLine, lines[mcrLine-1]));
+                        errorList.push_back(Error ("divisão por zero", "semântico", origLine, lines[mcrLine-1], argPos));
                 } else if (auxInfo == 2) { // é um pulo
                     if (labelList[i].vectSize != 0)
-                        errorList.push_back(Error ("pulo para seção inválida", "semântico", origLine, lines[mcrLine-1]));
+                        errorList.push_back(Error ("pulo para seção inválida", "semântico", origLine, lines[mcrLine-1], argPos));
                 } else if (auxInfo == 3) { // tá modificando o rótulo
                     if (labelList[i].isConst != 0)
-                        errorList.push_back(Error ("valores constantes não podem ser modificados", "semântico", origLine, lines[mcrLine-1]));
+                        errorList.push_back(Error ("valores constantes não podem ser modificados", "semântico", origLine, lines[mcrLine-1], argPos));
                 }
                 
                 // se não for pulo, não pode acessar a área de texto
                 if (labelList[i].vectSize == 0 && auxInfo != 2)
-                    errorList.push_back(Error ("acesso à seção de texto só é permitido para pulos", "semântico", origLine, lines[mcrLine-1]));
+                    errorList.push_back(Error ("acesso à seção de texto só é permitido para pulos", "semântico", origLine, lines[mcrLine-1], argPos));
                 
+                argPos = argPos + labelList[i].name.size() + 1 + 1 + 1;
+                    
                 // nao se pode usar offset com pulos
                 if (auxInfo == 2 && offset != 0)
-                    errorList.push_back(Error ("o deslocamento de pulos deve ser zero", "semântico", origLine, lines[mcrLine-1]));
+                    errorList.push_back(Error ("o deslocamento de pulos deve ser zero", "semântico", origLine, lines[mcrLine-1], argPos));
                 
                 // checa se o tamanho do rotulo bate com o indice n (rotulo + n)
                 if (offset >= labelList[i].vectSize && auxInfo != 2 && labelList[i].vectSize > 0)
-                    errorList.push_back(Error ("indíce excede o tamanho do vetor "+labelList[i].name, "semântico", origLine, lines[mcrLine-1]));
+                    errorList.push_back(Error ("indíce excede o tamanho do vetor "+labelList[i].name, "semântico", origLine, lines[mcrLine-1], argPos));
                 
                 machineCode[address] = labelList[i].value+offset;
                 

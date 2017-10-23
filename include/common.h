@@ -11,7 +11,6 @@ std::vector<Dir> getDirList (std::string);
 int integerCheck (std::string, int&);
 void reportError (std::string, std::string, int, std::string);
 int labelCheck (std::string, std::vector<Instr>&, std::vector<Dir>&, int&);
-int labelCheck (std::string, std::vector<Instr>&, std::vector<Dir>&); // REMOVER FUTURAMENTE
 bool operator< (const Error&, const Error&);
 
 
@@ -309,43 +308,4 @@ saida: se a primeira é menor que a segunda (compara o num de linhas)
 */
 bool operator< (const Error &A, const Error &B) {
     return (A.lineNum < B.lineNum);
-}
-
-
-
-
-// REMOVER FUTURAMENTE
-int labelCheck (std::string label, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
-    
-    // checa se o rótulo está vazio
-    if (label.empty())
-        return -5;
-    
-    // checa o tamanho da string
-    if (label.size() > 100)
-        return -1;
-    
-    // checa se o primeiro caracter é um número
-    if (label.front() >= '0' && label.front() <= '9')
-        return -2;
-    
-    // verifica se só existem números, caracteres ou _ na string
-    for (unsigned int i = 0; i < label.size(); ++i) {
-        if ((label[i] < 'A' || label[i] > 'Z') && (label[i] < '0' || label[i] > '9') && (label[i] != '_'))
-            return -3;
-    }
-    
-    // verifica se o rótulo tem o nome de uma instrução
-    for (unsigned int i = 0; i < instrList.size(); ++i) {
-        if (label == instrList[i].name)
-            return -4;
-    }
-    
-    // verifica se o rótulo tem o nome de uma diretiva
-    for (unsigned int i = 0; i < dirList.size(); ++i) {
-        if (label == dirList[i].name)
-            return -4;
-    }
-        
-    return 0;
 }
