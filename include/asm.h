@@ -4,8 +4,8 @@
 
 /*      DECLARAÇÕES DAS FUNÇÕES      */
 int constCheck (std::string&, int&);
-int spaceCommand (std::stringstream&, std::string&, std::vector<int>&, int&, std::vector<Label>&);
-int constCommand (std::stringstream&, std::string&, std::vector<int>&, int&, std::vector<Label>&);
+int spaceCommand (std::stringstream&, std::string&, std::vector<int>&, int&, std::vector<Label>&, int&);
+int constCommand (std::stringstream&, std::string&, std::vector<int>&, int&, std::vector<Label>&, int&);
 int assembleInstr (Instr&, int&, std::vector<int>&, std::vector<Label>&, std::stringstream&, std::vector<Instr>&, std::vector<Dir>&);
 std::vector<int> asmParser (std::ifstream&, std::vector<Label>&, int&, int&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&, int&, int&, std::vector<int>&, std::vector<std::string>&, std::vector<Error>&);
 void assembleCode (std::string, std::string, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&,std::vector<Error>&);
@@ -64,7 +64,7 @@ spaceCommand: executa a diretiva space, e configura o rótulo
 entrada:
 saida: codigo de erro
 */
-int spaceCommand (std::stringstream &lineStream, std::string &labelName, std::vector<int> &partialMachineCode, int &addrCounter, std::vector<Label> &labelList) {
+int spaceCommand (std::stringstream &lineStream, std::string &labelName, std::vector<int> &partialMachineCode, int &addrCounter, std::vector<Label> &labelList, int& pos) {
     
     int amount; // número de espaços a serem reservados
     
@@ -72,8 +72,10 @@ int spaceCommand (std::stringstream &lineStream, std::string &labelName, std::ve
     std::string token2;
     lineStream >> token2;
     
+    pos = labelName.size()+1 + 1 + 6;
+    
     if (token2.empty()) // se não tem argumento, só reserva um espaço
-        amount = 1;
+        amount = 1;    
         
     else { // se tem argumentos, checa se é um número válido
         int status = integerCheck (token2, amount);
@@ -81,9 +83,13 @@ int spaceCommand (std::stringstream &lineStream, std::string &labelName, std::ve
             return -1;
     }
     
-    // extrai novo token (se houver mais um, o numero de argumentos eh invalido)
+    // extrai novo token 
     std::string token3;
     lineStream >> token3;
+    
+    pos += token2.size() + 1;
+    
+    // se houver mais um, o numero de argumentos eh invalido
     if (!token3.empty())
         return -3;
     
@@ -91,6 +97,8 @@ int spaceCommand (std::stringstream &lineStream, std::string &labelName, std::ve
         partialMachineCode.push_back(0);
         addrCounter++;
     }
+    
+    pos = 0;
     
     // se não tiver rótulo antes de SPACE, dá erro
     if (labelName.empty()) {
@@ -117,13 +125,15 @@ constCommand: executa a diretiva const, e configura o rótulo
 entrada:
 saida: codigo de erro
 */
-int constCommand (std::stringstream &lineStream, std::string &labelName, std::vector<int> &partialMachineCode, int &addrCounter, std::vector<Label> &labelList) {
+int constCommand (std::stringstream &lineStream, std::string &labelName, std::vector<int> &partialMachineCode, int &addrCounter, std::vector<Label> &labelList, int& pos) {
     
     int constant;
     
     // le o proximo token
     std::string token2;
     lineStream >> token2;
+    
+    pos = labelName.size()+1 + 1 + 6;
     
     if (token2.empty()) // checa se foi dado um argumento
         return -1;
@@ -132,14 +142,20 @@ int constCommand (std::stringstream &lineStream, std::string &labelName, std::ve
     if (status == 0)
         return -2;
         
-    // le mais um token (se conseguir ler, o numero de argumento eh invalido)
+    // le mais um token
     std::string token3;
     lineStream >> token3;
+    
+    pos += token2.size() + 1;
+    
+    // se conseguir ler, o numero de argumento eh invalido
     if (!token3.empty())
         return -1;
         
     partialMachineCode.push_back (constant); // adiciona a constante no código de máquina
     addrCounter++;
+    
+    pos = 0;
     
     if (labelName.empty()) { // checa se foi declarado um rotulo antes
         return -3;
@@ -477,6 +493,8 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
     
     std::string labelNameBackup;
     
+    int colon = 0;
+    
     if (token.back() == ':') {
         
         // verifica se o rótulo é válido
@@ -494,46 +512,51 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         else if (valid == -5)
             errorList.push_back(Error("declaração de rótulo vazia", "sintático", lineDict[lineCounter-1], line, pos));
         
-        // verifica se o rótulo já está na lista de rótulos e se já foi definido
-        int alreadyDefined = 0;
-        int alreadyMentioned = 0;
-        int labelPos = -1;
-        for (unsigned int i = 0; i < labelList.size(); ++i) {
-            if (labelList[i].name == token) {
-                alreadyMentioned = 1;
-                labelPos = i;
-                if (labelList[i].isDefined)
-                    alreadyDefined = 1;
-            }
-        }
-        
-        // ja foi definido (da erro de simbolo ja definido)
-        if (alreadyDefined) {
-            int pos = 0;
-            errorList.push_back(Error("símbolo já definido", "semântico", lineDict[lineCounter-1], line, pos));
-        }   
+        if (!token.empty()) {
             
-        // nao foi definido mas ja foi mencionado (define ele agora)
-        else if (alreadyMentioned) {
-            labelList[labelPos].value = addrCounter;
-            labelList[labelPos].isDefined = 1;
-            labelList[labelPos].vectSize = 0; // indica que é rotulo da area de texto (pode mudar se for chamada uma diretiva da área de dados)
-            labelList[labelPos].isConst = 0;
-        }
-        
-        // nunca foi chamado nem definido (acrescenta novo rotulo definido)
-        else {
-            Label label;
-            label.name = token;
-            label.value = addrCounter;
-            label.isDefined = 1;
-            label.vectSize = 0;
-            label.isConst = 0;
-            labelList.push_back(label);
-        }
-        
-        // salva o nome do rotulo
-        labelNameBackup = token;
+            // verifica se o rótulo já está na lista de rótulos e se já foi definido
+            int alreadyDefined = 0;
+            int alreadyMentioned = 0;
+            int labelPos = -1;
+            for (unsigned int i = 0; i < labelList.size(); ++i) {
+                if (labelList[i].name == token) {
+                    alreadyMentioned = 1;
+                    labelPos = i;
+                    if (labelList[i].isDefined)
+                        alreadyDefined = 1;
+                }
+            }
+            
+            // ja foi definido (da erro de simbolo ja definido)
+            if (alreadyDefined) {
+                int pos = 0;
+                errorList.push_back(Error("símbolo já definido", "semântico", lineDict[lineCounter-1], line, pos));
+            }   
+                
+            // nao foi definido mas ja foi mencionado (define ele agora)
+            else if (alreadyMentioned) {
+                labelList[labelPos].value = addrCounter;
+                labelList[labelPos].isDefined = 1;
+                labelList[labelPos].vectSize = 0; // indica que é rotulo da area de texto (pode mudar se for chamada uma diretiva da área de dados)
+                labelList[labelPos].isConst = 0;
+            }
+            
+            // nunca foi chamado nem definido (acrescenta novo rotulo definido)
+            else {
+                Label label;
+                label.name = token;
+                label.value = addrCounter;
+                label.isDefined = 1;
+                label.vectSize = 0;
+                label.isConst = 0;
+                labelList.push_back(label);
+            }
+            
+            // salva o nome do rotulo
+            labelNameBackup = token;
+            
+        } else
+            colon = 1;
         
         // coloca um novo token no lugar do rótulo, que já foi processado
         lineStream >> token;
@@ -564,6 +587,8 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
             int pos = 0;
             if (!labelNameBackup.empty())
                 pos = labelNameBackup.size()+1 + 1;
+            else if (colon)
+                pos += 2;
             errorList.push_back(Error("comando não reconhecido", "léxico", lineDict[lineCounter-1], line, pos));
         }
             
@@ -621,6 +646,8 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                 int pos = 0;
                 if (!labelNameBackup.empty())
                     pos = labelNameBackup.size()+1 + 1;
+                else if (colon)
+                    pos += 2;
                 errorList.push_back(Error("instruções devem estar na seção de texto", "semântico", lineDict[lineCounter-1], line, pos));
             }
             
@@ -648,34 +675,56 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                     int pos = token.size()+1;
                     if (!labelNameBackup.empty())
                         pos += labelNameBackup.size()+1 + 1;
+                    else if (colon)
+                        pos += 2;
                     errorList.push_back(Error("seção não reconhecida", "sintático", lineDict[lineCounter-1], line, pos));
                 }
             
             // se for SPACE, verifica os argumentos e coloca no código de máquina as reservas
             } else if (dir.name == "SPACE") {
-                int status = spaceCommand (lineStream, labelNameBackup, partialMachineCode, addrCounter, labelList);
+                int pos = 0;
+                int status = spaceCommand (lineStream, labelNameBackup, partialMachineCode, addrCounter, labelList, pos);
+                if (colon)
+                    pos += 2;
                 if (status == -1)
-                    errorList.push_back(Error("número de elementos inválido", "léxico", lineDict[lineCounter-1], line));
+                    errorList.push_back(Error("número de elementos inválido", "léxico", lineDict[lineCounter-1], line, pos));
                 else if (status == -2)
-                    errorList.push_back(Error("a diretiva SPACE precisa ser precedida de um rótulo", "sintático", lineDict[lineCounter-1], line));
+                    errorList.push_back(Error("a diretiva SPACE precisa ser precedida de um rótulo", "sintático", lineDict[lineCounter-1], line, pos));
                 else if (status == -3)
-                    errorList.push_back(Error("é esperado um ou nenhum argumento para SPACE", "léxico", lineDict[lineCounter-1], line));
+                    errorList.push_back(Error("é esperado um ou nenhum argumento para SPACE", "léxico", lineDict[lineCounter-1], line, pos));
                     
-                if (section != 1)
-                    errorList.push_back(Error("SPACE deve estar na seção de dados", "semântico", lineDict[lineCounter-1], line));
+                if (section != 1) {
+                    int pos = 0;
+                    if (!labelNameBackup.empty())
+                        pos = labelNameBackup.size()+1 + 1;
+                    else if (colon)
+                        pos += 2;
+                    errorList.push_back(Error("SPACE deve estar na seção de dados", "semântico", lineDict[lineCounter-1], line, pos));
+                }
+                    
             
             // se for CONST, verifica o argumento e salva no código de máquina
             } else if (dir.name == "CONST") {
-                int status = constCommand (lineStream, labelNameBackup, partialMachineCode, addrCounter, labelList);
+                int pos = 0;
+                int status = constCommand (lineStream, labelNameBackup, partialMachineCode, addrCounter, labelList, pos);
+                if (colon)
+                    pos += 2;
                 if (status == -1)
-                    errorList.push_back(Error("é esperado 1 argumento para a reserva de constante", "sintático", lineDict[lineCounter-1], line));
+                    errorList.push_back(Error("é esperado 1 argumento para a reserva de constante", "sintático", lineDict[lineCounter-1], line, pos));
                 else if (status == -2)
-                    errorList.push_back(Error("número constante inválido", "léxico", lineDict[lineCounter-1], line));
+                    errorList.push_back(Error("número constante inválido", "léxico", lineDict[lineCounter-1], line, pos));
                 else if (status == -3)
-                    errorList.push_back(Error("a diretiva CONST precisa ser precedida de um rótulo", "sintático", lineDict[lineCounter-1], line));
+                    errorList.push_back(Error("a diretiva CONST precisa ser precedida de um rótulo", "sintático", lineDict[lineCounter-1], line, pos));
                     
-                if (section != 1)
-                    errorList.push_back(Error("CONST deve estar na seção de dados", "semântico", lineDict[lineCounter-1], line));   
+                if (section != 1) {
+                    int pos = 0;
+                    if (!labelNameBackup.empty())
+                        pos = labelNameBackup.size()+1 + 1;
+                    else if (colon)
+                        pos += 2;
+                    errorList.push_back(Error("CONST deve estar na seção de dados", "semântico", lineDict[lineCounter-1], line, pos));
+                }
+                      
             }
         }
     }
