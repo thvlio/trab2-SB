@@ -10,8 +10,8 @@ std::vector<Instr> getInstrList (std::string);
 std::vector<Dir> getDirList (std::string);
 int integerCheck (std::string, int&);
 void reportError (std::string, std::string, int, std::string);
-int labelCheck (std::string, std::vector<Instr>&, std::vector<Dir>&);
-
+int labelCheck (std::string, std::vector<Instr>&, std::vector<Dir>&, int&);
+int labelCheck (std::string, std::vector<Instr>&, std::vector<Dir>&); // REMOVER
 
 
 /*      DEFINIÇÕES DAS FUNÇÕES     */
@@ -214,11 +214,57 @@ int integerCheck (std::string value, int &conv) {
 
 
 /*
-reportError: mostra no terminal a mensagem de erro passada pelo programa, junto com o tipo de erro e a linha
-entrada: mensagem de erro, tipo de erro e linha do erro
-saida: nenhuma (mensagem de erro no terminal)
+labelCheck: verifica se o rotulo eh valido
+entrada: rotulo a ser verificado
+saida: inteiro indicando se rotulo é válido
 */
-void reportError (std::string message, std::string type, int lineNum, std::string line) {
+int labelCheck (std::string label, std::vector<Instr> &instrList, std::vector<Dir> &dirList, int &pos) {
+    
+    // checa se o rótulo está vazio
+    if (label.empty())
+        return -5;
+    
+    // checa o tamanho da string
+    if (label.size() > 100) {
+        pos = label.size()-1;
+        return -1;
+    }
+    
+    // checa se o primeiro caracter é um número
+    if (label.front() >= '0' && label.front() <= '9')
+        return -2;
+    
+    // verifica se só existem números, caracteres ou _ na string
+    for (unsigned int i = 0; i < label.size(); ++i) {
+        if ((label[i] < 'A' || label[i] > 'Z') && (label[i] < '0' || label[i] > '9') && (label[i] != '_')) {
+            pos = i;
+            return -3; 
+        }
+    }
+    
+    // verifica se o rótulo tem o nome de uma instrução
+    for (unsigned int i = 0; i < instrList.size(); ++i) {
+        if (label == instrList[i].name)
+            return -4;
+    }
+    
+    // verifica se o rótulo tem o nome de uma diretiva
+    for (unsigned int i = 0; i < dirList.size(); ++i) {
+        if (label == dirList[i].name)
+            return -4;
+    }
+        
+    return 0;
+}
+
+
+
+/*
+reportList: reporta todos os erros, na ordem das linhas. mostra no terminal a mensagem de erro passada pelo programa, junto com o tipo de erro e a linha
+entrada: lista de erros
+saida: nenhuma (erros no terminal)
+*/
+void reportList (std::vector<Error> &errorList) {
     
     // configura algumas cores
     std::string escRed = "\033[31;1m",
@@ -227,24 +273,38 @@ void reportError (std::string message, std::string type, int lineNum, std::strin
     escBlue = "\033[34;1m",
     escReset = "\033[0m";
     
-    // mostra o erro
-    if (lineNum == -1) { // para o caso de não ter linha específica
-        std::cout << escRed << "Erro" << escReset << " no arquivo de entrada: ";
-        std::cout << escYellow << message << escReset << " (erro " << type << ")" << "\n\n";
-    } else { // quando tem linha específica
-        std::cout << escRed << "Erro" << escReset << " na linha " << escRed << lineNum << escReset << " do arquivo de entrada: ";
-        std::cout << escYellow << message << escReset << " (erro " << type << ")" << "\n" << "\t" << escBlue << line << escReset << "\n\n";
+    // mostra os erros
+    for (unsigned int i = 0; i < errorList.size(); ++i) {
+        
+        // erro atual
+        Error error = errorList[i];
+        
+        // offset para ajustar o apontador de erro na linha
+        std::string offset;
+        for (int i = 0; i < error.pos; ++i)
+            offset.push_back(' ');
+        
+        // para o caso de não ter linha específica
+        if (error.lineNum == -1) {
+            std::cout << escRed << "Erro" << escReset << " no arquivo de entrada: " << escYellow << error.message << escReset << " (erro " << error.type << ")" << "\n\n";
+        
+        // quando tem linha específica
+        } else {
+            std::cout << escRed << "Erro" << escReset << " na linha " << escRed << error.lineNum << escReset << " do arquivo de entrada: " << escYellow << error.message << escReset << " (erro " << error.type << ")" << "\n";
+            std::cout << "\t" << escBlue << error.line << escReset << "\n";
+            std::cout << "\t" << offset << escGreen << "^" << escReset << "\n\n";
+        }
+        
     }
     
 }
 
 
 
-/*
-labelCheck: verifica se o rotulo eh valido
-entrada: rotulo a ser verificado
-saida: inteiro indicando se rotulo é válido
-*/
+
+
+
+// REMOVER
 int labelCheck (std::string label, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
     
     // checa se o rótulo está vazio
@@ -262,7 +322,7 @@ int labelCheck (std::string label, std::vector<Instr> &instrList, std::vector<Di
     // verifica se só existem números, caracteres ou _ na string
     for (unsigned int i = 0; i < label.size(); ++i) {
         if ((label[i] < 'A' || label[i] > 'Z') && (label[i] < '0' || label[i] > '9') && (label[i] != '_'))
-            return -3; 
+            return -3;
     }
     
     // verifica se o rótulo tem o nome de uma instrução

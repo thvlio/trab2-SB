@@ -1,8 +1,8 @@
-#include "types.h"
-#include "common.h"
-#include "pre.h"
-#include "mcr.h"
-#include "asm.h"
+#include "include/types.h"
+#include "include/common.h"
+#include "include/pre.h"
+#include "include/mcr.h"
+#include "include/asm.h"
 
 // compilar com
 // g++ -std=c++11 -Wall main.cpp -o main.out
@@ -40,13 +40,16 @@ int main (int argc, char *argv[]) {
     std::vector<int> lineDictMcr;
     std::vector<int> lineDict;
     
+    // lista de erros a serem mostrados no final da execução
+    std::vector<Error> errorList;
+    
     // passagem de pre processamento
     if (operation == "-p" || operation == "-m" || operation == "-o")
-        preProcessFile (inFileName, preFileName, lineDictPre, instrList, dirList);
+        preProcessFile (inFileName, preFileName, lineDictPre, instrList, dirList, errorList);
     
     // passagem de macros
     if (operation == "-m" || operation == "-o")
-        expandMacros (preFileName, mcrFileName, lineDictMcr, lineDictPre, instrList, dirList);
+        expandMacros (preFileName, mcrFileName, lineDictMcr, lineDictPre, instrList, dirList, errorList);
     
     // faz o dicionario "composto"
     for (unsigned int i = 0; i < lineDictMcr.size(); ++i)
@@ -54,8 +57,14 @@ int main (int argc, char *argv[]) {
     
     // passagem normal
     if (operation == "-o")
-        assembleCode (mcrFileName, outFileName, lineDict, instrList, dirList);
+        assembleCode (mcrFileName, outFileName, lineDict, instrList, dirList, errorList);
     
+    // coloca os erros na ordem, de acordo com o número da linha
+    std::sort (errorList.begin(), errorList.end());
+        
+    // mostra todos os erros no terminal
+    reportList (errorList);
+        
     return 0;
     
 }

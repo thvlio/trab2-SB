@@ -5,8 +5,8 @@
 /*      DECLARAÇÕES DAS FUNÇÕES      */
 int createMacro (std::string&, std::ifstream&, std::string&, std::vector<Macro>&, int&);
 void mcrSearchAndReplace (std::string&, std::string&, std::vector<Macro>&, int&);
-void mcrParser (std::string&, std::ifstream&, std::vector<Macro>&, int&, int&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&);
-int expandMacros (std::string, std::string, std::vector<int>&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&);
+void mcrParser (std::string&, std::ifstream&, std::vector<Macro>&, int&, int&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&, std::vector<Error>&);
+int expandMacros (std::string, std::string, std::vector<int>&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&, std::vector<Error>&);
 
 
 
@@ -89,7 +89,7 @@ mcrParser: parser do processamento de macros. procura definicoes e chamadas de m
 entrada: linha atual, stream do arquivo .pre, lista de macros, contador de linhas, flag indicando se uma macro foi chamada e dicionário de linhas do preprocessamento
 saida: nenhuma (linha atual, contador de linhas e flag de macro alterados por referencia)
 */
-void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &macroList, int &lineCounter, int &macroCall, std::vector<int> &lineDictPre, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
+void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &macroList, int &lineCounter, int &macroCall, std::vector<int> &lineDictPre, std::vector<Instr> &instrList, std::vector<Dir> &dirList, std::vector<Error> &errorList) {
     
     // le uma linha do arquivo
     getline(preFile, line);
@@ -108,7 +108,7 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
         
         // checa se o token seguinte é um rótulo
         if (token2.back() == ':')
-            reportError ("mais de um rótulo em uma linha", "sintático", lineDictPre[lineCounter-1], line);
+            errorList.push_back(Error ("mais de um rótulo em uma linha", "sintático", lineDictPre[lineCounter-1], line));
         
         // verifica se esse rótulo já foi definido como uma macro
         token.pop_back();
@@ -118,7 +118,7 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
                 redefinition = 1;
         }
         if (redefinition)
-            reportError("redefinição de macro", "semântico", lineDictPre[lineCounter-1], line);
+            errorList.push_back(Error("redefinição de macro", "semântico", lineDictPre[lineCounter-1], line));
         
         // se for uma diretiva de macro, cria uma macro nova na lista
         if (token2 == "MACRO") {
@@ -126,20 +126,20 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
             // verifica se o rótulo é válido
             int valid = labelCheck(token, instrList, dirList);
             if (valid == -1)
-                reportError("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDictPre[lineCounter-1], line);
+                errorList.push_back(Error("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDictPre[lineCounter-1], line));
             else if (valid == -2)
-                reportError("rótulos não podem começar com números", "léxico", lineDictPre[lineCounter-1], line);
+                errorList.push_back(Error("rótulos não podem começar com números", "léxico", lineDictPre[lineCounter-1], line));
             else if (valid == -3)
-                reportError("caracter inválido encontrado no rótulo", "léxico", lineDictPre[lineCounter-1], line);
+                errorList.push_back(Error("caracter inválido encontrado no rótulo", "léxico", lineDictPre[lineCounter-1], line));
             else if (valid == -4)
-                reportError("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDictPre[lineCounter-1], line);
+                errorList.push_back(Error("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDictPre[lineCounter-1], line));
             else if (valid == -5)
-                reportError("declaração de rótulo vazia", "sintático", lineDictPre[lineCounter-1], line);
+                errorList.push_back(Error("declaração de rótulo vazia", "sintático", lineDictPre[lineCounter-1], line));
             
             // cria uma macro na lista
             int status = createMacro (line, preFile, token, macroList, lineCounter);
             if (status == -1)
-                reportError("a definição de uma macro deve terminar com END", "semântico", lineDictPre[lineCounter-1], line);
+                errorList.push_back(Error("a definição de uma macro deve terminar com END", "semântico", lineDictPre[lineCounter-1], line));
             
         }
     
@@ -158,7 +158,7 @@ expandMacros: faz a passagem para expandir macros no arquivo, que inclui:
 entrada: nome do arquivo de entrada '.pre', nome do arquivo de saida '.mcr' e dicionario de linhas
 saida: inteiro representando a ocorrencia de erro
 */
-int expandMacros (std::string preFileName, std::string mcrFileName, std::vector<int> &lineDictMcr, std::vector<int> &lineDictPre, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
+int expandMacros (std::string preFileName, std::string mcrFileName, std::vector<int> &lineDictMcr, std::vector<int> &lineDictPre, std::vector<Instr> &instrList, std::vector<Dir> &dirList, std::vector<Error> &errorList) {
     
     std::ifstream preFile (preFileName);
     std::ofstream mcrFile (mcrFileName);
@@ -172,7 +172,7 @@ int expandMacros (std::string preFileName, std::string mcrFileName, std::vector<
         
         // chama o parser da passagem de macros
         std::string line;
-        mcrParser(line, preFile, macroList, lineCounter, macroCall, lineDictPre, instrList, dirList);
+        mcrParser(line, preFile, macroList, lineCounter, macroCall, lineDictPre, instrList, dirList, errorList);
         
         // se a linha nao estiver vazia, copia no arquivo '.mcr'        
         if (!line.empty()) {

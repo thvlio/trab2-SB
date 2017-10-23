@@ -4,11 +4,12 @@
 
 /*      BIBLIOTECAS     */
 
-#include <iostream> // std::cout
-#include <fstream> // std::ifstream
-#include <string> // std::string
-#include <sstream> // std::stringstream
-#include <algorithm> // ::toupper
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <string>
+#include <sstream>
+#include <algorithm>
 
 
 
@@ -84,10 +85,17 @@ struct Macro {
 
 // Error: armazrna um erro e suas informações
 struct Error {
+    // membros
     std::string message; // mensagem do erro
     std::string type; // tipo de erro
     int lineNum; // linha do erro
     std::string line; // conteudo da linha do erro
+    int pos; // posição na linha do erro
+    // metodos
     Error () {};
-    Error (std::string msg, std::string tp, int lnn, std::string ln): message(msg), type(tp), lineNum(lnn), line(ln) {};
+    Error (std::string msg, std::string tp, int lnn, std::string ln, int ps=0): message(msg), type(tp), lineNum(lnn), line(ln), pos(ps) {};
+    // overload do operator < para poder usar std::sort
+    bool operator< (const Error &B) {
+        return (this->lineNum < B.lineNum);
+    }
 };

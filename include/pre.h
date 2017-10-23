@@ -5,10 +5,10 @@
 /*      DECLARAÇÕES DAS FUNÇÕES      */
 void preReadLine (std::string&, std::ifstream&, std::vector<Label>&);
 void appendNextLine (std::string&, std::stringstream&, std::ifstream&, std::vector<Label>&, int&);
-int equCommand (std::stringstream&, std::vector<Label>&, std::string&);
-int ifCommand (std::stringstream&, std::ifstream&, int&);
-void preParser (std::string&, std::ifstream&, std::vector<Label>&, int&, std::vector<Instr>&, std::vector<Dir>&);
-int preProcessFile (std::string, std::string, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&);
+int equCommand (std::stringstream&, std::vector<Label>&, std::string&, int&);
+int ifCommand (std::stringstream&, std::ifstream&, int&, int&);
+void preParser (std::string&, std::ifstream&, std::vector<Label>&, int&, std::vector<Instr>&, std::vector<Dir>&, std::vector<Error>&);
+int preProcessFile (std::string, std::string, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&, std::vector<Error>&);
 
 
 
@@ -105,7 +105,10 @@ equCommand: associa um valor ao rotulo
 entrada: linha atual, stream da linha atual, lista de rotulos e nome do rotulo
 saida: inteiro indicando se houve erro (lista de rotulos alterada por referencia)
 */
-int equCommand (std::stringstream &lineStream, std::vector<Label> &labelList, std::string &token) {
+int equCommand (std::stringstream &lineStream, std::vector<Label> &labelList, std::string &token, int &pos) {
+    
+    // ajeita a posicao
+    pos = lineStream.tellg();
     
     // le o texto a ser substituido
     std::string equ;
@@ -135,7 +138,7 @@ ifCommand: se o valor do if for 1, compila a linha abaixo, senao esvazia a linha
 entrada: linha atual, stream da linha atual, stream do arquivo de entrada e contador de linhas
 saida: retorna se o numero lido eh inteiro (linha e contador de linhas alterados por referencia)
 */
-int ifCommand (std::stringstream &lineStream, std::ifstream &asmFile, int &lineCounter) {
+int ifCommand (std::stringstream &lineStream, std::ifstream &asmFile, int &lineCounter, int &pos) {
     
     // le o numero seguinte (a busca ja trocou o rotulo por um valor)
     std::string value;
@@ -176,7 +179,7 @@ preParser: processa uma linha do arquivo fonte
 entrada: linha atual, stream do arquivo de entrada, a lista de rotulos e o contador de linhas
 saida: nenhuma (linha lida e contador de linhas alterados por referência)
 */
-void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &labelList, int &lineCounter, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
+void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &labelList, int &lineCounter, std::vector<Instr> &instrList, std::vector<Dir> &dirList, std::vector<Error> &errorList) {
     
     // le uma linha, corrige algumas coisas e procura na linha por rotulos que ja tenham sido definidos por equs
     preReadLine (line, asmFile, labelList);
@@ -196,8 +199,11 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
         lineStream >> token2;
         
         // checa se o token seguinte é um rótulo
-        if (token2.back() == ':')
-            reportError ("mais de um rótulo em uma linha", "sintático", lineCounter, line);
+        if (token2.back() == ':') {
+            int pos = (int) lineStream.tellg() - token2.size();
+            errorList.push_back(Error("mais de um rótulo em uma linha", "sintático", lineCounter, line, pos));
+        }
+            
         
         // se token2 estiver vazio, anexa a proxima linha
         if (token2.empty()) {
@@ -210,24 +216,26 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
             
             // verifica se o rótulo é válido
             token.pop_back();
-            int valid = labelCheck(token, instrList, dirList);
+            int pos = 0;
+            int valid = labelCheck(token, instrList, dirList, pos);
+            pos += (int) lineStream.tellg() - token.size()-1 - token2.size()-1;
             if (valid == -1)
-                reportError("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineCounter, line);
+                errorList.push_back(Error("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineCounter, line, pos));
             else if (valid == -2)
-                reportError("rótulos não podem começar com números", "léxico", lineCounter, line);
+                errorList.push_back(Error("rótulos não podem começar com números", "léxico", lineCounter, line, pos));
             else if (valid == -3)
-                reportError("caracter inválido encontrado no rótulo", "léxico", lineCounter, line);
+                errorList.push_back(Error("caracter inválido encontrado no rótulo", "léxico", lineCounter, line, pos));
             else if (valid == -4)
-                reportError("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineCounter, line);
+                errorList.push_back(Error("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineCounter, line, pos));
             else if (valid == -5)
-                reportError("declaração de rótulo vazia", "sintático", lineCounter, line);
+                errorList.push_back(Error("declaração de rótulo vazia", "sintático", lineCounter, line, pos));
             
             // executa o comando da diretiva
-            int status = equCommand (lineStream, labelList, token);
+            int status = equCommand (lineStream, labelList, token, pos);
             if (status == -1)
-                reportError("definição de EQU vazia", "sintático", lineCounter, line);
+                errorList.push_back(Error("definição de EQU vazia", "sintático", lineCounter, line, pos));
             else if (status == -2)
-                reportError("é esperado somente um argumento para EQU (sem espaços em branco)", "sintático", lineCounter, line);
+                errorList.push_back(Error("é esperado somente um argumento para EQU (sem espaços em branco)", "sintático", lineCounter, line, pos));
             
             // esvazia a string p nao salvar a linha no codigo
             line.clear();
@@ -238,11 +246,12 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
     } else if (token == "IF") {
         
         // executa o comando da diretiva
-        int status = ifCommand (lineStream, asmFile, lineCounter);
+        int pos = 0;
+        int status = ifCommand (lineStream, asmFile, lineCounter, pos);
         if (status == -1)
-            reportError("parâmetro de IF deveria ser um número decimal", "sintático", lineCounter, line);
+            errorList.push_back(Error("parâmetro de IF deveria ser um número decimal", "sintático", lineCounter, line, pos));
         else if (status == -2)
-            reportError("IF só recebe um argumento", "sintático", lineCounter, line);
+            errorList.push_back(Error("IF só recebe um argumento", "sintático", lineCounter, line, pos));
             
         // esvazia a string p nao salvar a linha no codigo
         line.clear();
@@ -261,7 +270,7 @@ preProcessFile: faz a passagem de preprocessamento no arquivo, que inclui:
 entrada: nome do arquivo de entrada '.asm', nome do arquivo de saida '.pre' e dicionario de linhas
 saida: inteiro indicando se houve erros
 */
-int preProcessFile (std::string inFileName, std::string preFileName, std::vector<int> &lineDict, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
+int preProcessFile (std::string inFileName, std::string preFileName, std::vector<int> &lineDict, std::vector<Instr> &instrList, std::vector<Dir> &dirList, std::vector<Error> &errorList) {
     
     std::ifstream asmFile (inFileName);
     std::ofstream preFile (preFileName);
@@ -274,7 +283,7 @@ int preProcessFile (std::string inFileName, std::string preFileName, std::vector
         
         // chama o parser especifico do preprocessamento        
         std::string line;
-        preParser(line, asmFile, labelList, lineCounter, instrList, dirList);
+        preParser(line, asmFile, labelList, lineCounter, instrList, dirList, errorList);
             
         // se a linha nao retornar vazia, copia no arquivo '.pre'        
         if (!line.empty()) {

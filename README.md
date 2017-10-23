@@ -11,7 +11,7 @@ Para compilar, use:
 * `nome.out`: o nome do arquivo executável (ex: `main.out`)
     
 Para executar, use:
-* .`./nome` `-x` `yyy.asm` `zzz.o`
+* `./nome` `-x` `yyy.asm` `zzz.o`
 * `./nome`: o nome dado ao executável (ex: `./main.out`)
 * `-x`: diretiva de compilação (ex: `-o`)
 * `yyy.asm`: nome do arquivo de entrada (ex: `bin.asm`)

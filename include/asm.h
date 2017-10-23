@@ -7,8 +7,8 @@ int constCheck (std::string&, int&);
 int spaceCommand (std::stringstream&, std::string&, std::vector<int>&, int&, std::vector<Label>&);
 int constCommand (std::stringstream&, std::string&, std::vector<int>&, int&, std::vector<Label>&);
 int assembleInstr (Instr&, int&, std::vector<int>&, std::vector<Label>&, std::stringstream&, std::vector<Instr>&, std::vector<Dir>&);
-std::vector<int> asmParser (std::ifstream&, std::vector<Label>&, int&, int&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&, int&, int&, std::vector<int>&, std::vector<std::string>&);
-void assembleCode (std::string, std::string, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&);
+std::vector<int> asmParser (std::ifstream&, std::vector<Label>&, int&, int&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&, int&, int&, std::vector<int>&, std::vector<std::string>&, std::vector<Error>&);
+void assembleCode (std::string, std::string, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&,std::vector<Error>&);
 
 
 
@@ -456,7 +456,7 @@ asmParser: traduz uma linha em código máquina
 entrada:
 saida: código de máquina parcial num vetor de inteiros
 */
-std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelList, int &lineCounter, int &addrCounter, std::vector<int> &lineDict, std::vector<Instr> &instrList, std::vector<Dir> &dirList, int &section, int &sectionText, std::vector<int> &addrDict, std::vector<std::string> &lines) {
+std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelList, int &lineCounter, int &addrCounter, std::vector<int> &lineDict, std::vector<Instr> &instrList, std::vector<Dir> &dirList, int &section, int &sectionText, std::vector<int> &addrDict, std::vector<std::string> &lines, std::vector<Error> &errorList) {
     
     std::vector<int> partialMachineCode;
     
@@ -483,15 +483,15 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         token.pop_back();
         int valid = labelCheck(token, instrList, dirList);
         if (valid == -1)
-            reportError("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDict[lineCounter-1], line);
+            errorList.push_back(Error("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDict[lineCounter-1], line));
         else if (valid == -2)
-            reportError("rótulos não podem começar com números", "léxico", lineDict[lineCounter-1], line);
+            errorList.push_back(Error("rótulos não podem começar com números", "léxico", lineDict[lineCounter-1], line));
         else if (valid == -3)
-            reportError("caracter inválido encontrado no rótulo", "léxico", lineDict[lineCounter-1], line);
+            errorList.push_back(Error("caracter inválido encontrado no rótulo", "léxico", lineDict[lineCounter-1], line));
         else if (valid == -4)
-            reportError("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDict[lineCounter-1], line);
+            errorList.push_back(Error("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDict[lineCounter-1], line));
         else if (valid == -5)
-            reportError("declaração de rótulo vazia", "sintático", lineDict[lineCounter-1], line);
+            errorList.push_back(Error("declaração de rótulo vazia", "sintático", lineDict[lineCounter-1], line));
         
         // verifica se o rótulo já está na lista de rótulos e se já foi definido
         int alreadyDefined = 0;
@@ -508,7 +508,7 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         
         // ja foi definido (da erro de simbolo ja definido)
         if (alreadyDefined)
-            reportError("símbolo já definido", "semântico", lineDict[lineCounter-1], line);
+            errorList.push_back(Error("símbolo já definido", "semântico", lineDict[lineCounter-1], line));
             
         // nao foi definido mas ja foi mencionado (define ele agora)
         else if (alreadyMentioned) {
@@ -537,7 +537,7 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         
         // ja checa pra ver se não é mais um rótulo
         if (token.back() == ':')
-            reportError ("mais de um rótulo em uma linha", "sintático", lineDict[lineCounter-1], line);
+            errorList.push_back(Error ("mais de um rótulo em uma linha", "sintático", lineDict[lineCounter-1], line));
         
     }
     
@@ -555,7 +555,7 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
     
     // se nao encontrar o comando em nenhuma tabela, nao é um comando reconhecido
     if (isInstruction == -1 && isDirective == -1)
-        reportError("comando não reconhecido", "sintático", lineDict[lineCounter-1], line);
+        errorList.push_back(Error("comando não reconhecido", "sintático", lineDict[lineCounter-1], line));
         
     else {
         
@@ -565,50 +565,50 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
             int status = assembleInstr (instr, addrCounter, partialMachineCode, labelList, lineStream, instrList, dirList);
             if (status == -1) {
                 if (instr.numArg == 0)
-                    reportError("não é esperado nenhum argumento para "+instr.name, "sintático", lineDict[lineCounter-1], line);
+                    errorList.push_back(Error("não é esperado nenhum argumento para "+instr.name, "sintático", lineDict[lineCounter-1], line));
                 else if (instr.numArg == 1)
-                    reportError("é esperado 1 argumento para "+instr.name, "sintático", lineDict[lineCounter-1], line);
+                    errorList.push_back(Error("é esperado 1 argumento para "+instr.name, "sintático", lineDict[lineCounter-1], line));
                 else if (instr.numArg == 2)
-                    reportError("são esperados 2 argumentos para "+instr.name, "sintático", lineDict[lineCounter-1], line);
+                    errorList.push_back(Error("são esperados 2 argumentos para "+instr.name, "sintático", lineDict[lineCounter-1], line));
             } else if (status == -2)
-                reportError("a vírgula não deve ser separada do primeiro operando por espaço", "sintático", lineDict[lineCounter-1], line);
+                errorList.push_back(Error("a vírgula não deve ser separada do primeiro operando por espaço", "sintático", lineDict[lineCounter-1], line));
             else if (status == -3)
-                reportError ("divisão por zero", "semântico", lineDict[lineCounter-1], line);
+                errorList.push_back(Error ("divisão por zero", "semântico", lineDict[lineCounter-1], line));
             else if (status == -4)
-                reportError ("pulo para seção inválida", "semântico", lineDict[lineCounter-1], line);
+                errorList.push_back(Error ("pulo para seção inválida", "semântico", lineDict[lineCounter-1], line));
             else if (status == -5)
-                reportError ("valores constantes não podem ser modificados", "semântico", lineDict[lineCounter-1], line);
+                errorList.push_back(Error ("valores constantes não podem ser modificados", "semântico", lineDict[lineCounter-1], line));
             else if (status == -6)
-                reportError ("operação de indexacão inválida", "sintático", lineDict[lineCounter-1], line);
+                errorList.push_back(Error ("operação de indexacão inválida", "sintático", lineDict[lineCounter-1], line));
             else if (status == -7)
-                reportError ("deve haver uma vírgula entre os dois operandos da instrução", "sintático", lineDict[lineCounter-1], line);
+                errorList.push_back(Error ("deve haver uma vírgula entre os dois operandos da instrução", "sintático", lineDict[lineCounter-1], line));
             else if (status == -8)
-                reportError ("o deslocamento deve ser um número inteiro maior ou igual a zero", "sintático", lineDict[lineCounter-1], line);
+                errorList.push_back(Error ("o deslocamento deve ser um número inteiro maior ou igual a zero", "sintático", lineDict[lineCounter-1], line));
             else if (status == -9)
-                reportError ("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDict[lineCounter-1], line);
+                errorList.push_back(Error ("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDict[lineCounter-1], line));
             else if (status == -10)
-                reportError ("rótulos não podem começar com números", "léxico", lineDict[lineCounter-1], line);
+                errorList.push_back(Error ("rótulos não podem começar com números", "léxico", lineDict[lineCounter-1], line));
             else if (status == -11)
-                reportError ("caracter inválido encontrado no rótulo", "léxico", lineDict[lineCounter-1], line);
+                errorList.push_back(Error ("caracter inválido encontrado no rótulo", "léxico", lineDict[lineCounter-1], line));
             else if (status == -12)
-                reportError ("rótulo não pode ter nome de instrução ou diretiva", "sintático", lineDict[lineCounter-1], line);
+                errorList.push_back(Error ("rótulo não pode ter nome de instrução ou diretiva", "sintático", lineDict[lineCounter-1], line));
             else if (status == -13)
-                reportError ("estrutura da indexação incompleta", "sintático", lineDict[lineCounter-1], line);
+                errorList.push_back(Error ("estrutura da indexação incompleta", "sintático", lineDict[lineCounter-1], line));
             else if (status == -14)
-                reportError ("acesso à seção de texto só é permitido para pulos", "semântico", lineDict[lineCounter-1], line);
+                errorList.push_back(Error ("acesso à seção de texto só é permitido para pulos", "semântico", lineDict[lineCounter-1], line));
             else if (status == -15)
-                reportError ("o deslocamento de pulos deve ser zero", "semântico", lineDict[lineCounter-1], line);
+                errorList.push_back(Error ("o deslocamento de pulos deve ser zero", "semântico", lineDict[lineCounter-1], line));
             else if (status == -16)
-                reportError ("tentativa de endereçamento imediato", "sintático", lineDict[lineCounter-1], line);
+                errorList.push_back(Error ("tentativa de endereçamento imediato", "sintático", lineDict[lineCounter-1], line));
             else if (status == -17)
-                reportError ("só um rótulo pode ser declarado, e no começo da linha", "sintático", lineDict[lineCounter-1], line);
+                errorList.push_back(Error ("só um rótulo pode ser declarado, e no começo da linha", "sintático", lineDict[lineCounter-1], line));
             else if (status <= -18) {
                 int pos = -(status+18); // recupera a posicao do rotulo
-                reportError ("indíce excede o tamanho do vetor "+labelList[pos].name, "semântico", lineDict[lineCounter-1], line);
+                errorList.push_back(Error ("indíce excede o tamanho do vetor "+labelList[pos].name, "semântico", lineDict[lineCounter-1], line));
             }
                 
             if (section != 0)
-                reportError("instruções devem estar na seção de texto", "semântico", lineDict[lineCounter-1], line);
+                errorList.push_back(Error("instruções devem estar na seção de texto", "semântico", lineDict[lineCounter-1], line));
             
         // se for uma diretiva, faz uma função específica
         } else if (isDirective >= 0) {
@@ -625,33 +625,33 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                 } else if (token2 == "DATA")
                     section = 1;
                 else
-                    reportError("seção não reconhecida", "sintático", lineDict[lineCounter-1], line);
+                    errorList.push_back(Error("seção não reconhecida", "sintático", lineDict[lineCounter-1], line));
                     
             // se for SPACE, verifica os argumentos e coloca no código de máquina as reservas
             } else if (dir.name == "SPACE") {
                 int status = spaceCommand (lineStream, labelNameBackup, partialMachineCode, addrCounter, labelList);
                 if (status == -1)
-                    reportError("número de elementos inválido", "léxico", lineDict[lineCounter-1], line);
+                    errorList.push_back(Error("número de elementos inválido", "léxico", lineDict[lineCounter-1], line));
                 else if (status == -2)
-                    reportError("a diretiva SPACE precisa ser precedida de um rótulo", "sintático", lineDict[lineCounter-1], line);
+                    errorList.push_back(Error("a diretiva SPACE precisa ser precedida de um rótulo", "sintático", lineDict[lineCounter-1], line));
                 else if (status == -3)
-                    reportError("é esperado um ou nenhum argumento para SPACE", "léxico", lineDict[lineCounter-1], line);
+                    errorList.push_back(Error("é esperado um ou nenhum argumento para SPACE", "léxico", lineDict[lineCounter-1], line));
                     
                 if (section != 1)
-                    reportError("SPACE deve estar na seção de dados", "semântico", lineDict[lineCounter-1], line);
+                    errorList.push_back(Error("SPACE deve estar na seção de dados", "semântico", lineDict[lineCounter-1], line));
             
             // se for CONST, verifica o argumento e salva no código de máquina
             } else if (dir.name == "CONST") {
                 int status = constCommand (lineStream, labelNameBackup, partialMachineCode, addrCounter, labelList);
                 if (status == -1)
-                    reportError("é esperado 1 argumento para a reserva de constante", "sintático", lineDict[lineCounter-1], line);
+                    errorList.push_back(Error("é esperado 1 argumento para a reserva de constante", "sintático", lineDict[lineCounter-1], line));
                 else if (status == -2)
-                    reportError("número constante inválido", "léxico", lineDict[lineCounter-1], line);
+                    errorList.push_back(Error("número constante inválido", "léxico", lineDict[lineCounter-1], line));
                 else if (status == -3)
-                    reportError("a diretiva CONST precisa ser precedida de um rótulo", "sintático", lineDict[lineCounter-1], line);
+                    errorList.push_back(Error("a diretiva CONST precisa ser precedida de um rótulo", "sintático", lineDict[lineCounter-1], line));
                     
                 if (section != 1)
-                    reportError("CONST deve estar na seção de dados", "semântico", lineDict[lineCounter-1], line);   
+                    errorList.push_back(Error("CONST deve estar na seção de dados", "semântico", lineDict[lineCounter-1], line));   
             }
         }
     }
@@ -673,7 +673,7 @@ assembleCode: faz a passagem de montagem no arquivo, que inclui:
 entrada: nome do arquivo de entrada '.mcr'
 saida: nome do arquivo de saida '.o'
 */
-void assembleCode (std::string mcrFileName, std::string outFileName, std::vector<int> &lineDict, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
+void assembleCode (std::string mcrFileName, std::string outFileName, std::vector<int> &lineDict, std::vector<Instr> &instrList, std::vector<Dir> &dirList, std::vector<Error> &errorList) {
     
     std::ifstream mcrFile (mcrFileName);
     std::ofstream outFile (outFileName);
@@ -694,7 +694,7 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     while (!mcrFile.eof()) {
         
         // le o codigo de maquina parcial da linha
-        std::vector<int> partialMachineCode = asmParser(mcrFile, labelList, lineCounter, addrCounter, lineDict, instrList, dirList, section, sectionText, addrDict, lines);
+        std::vector<int> partialMachineCode = asmParser(mcrFile, labelList, lineCounter, addrCounter, lineDict, instrList, dirList, section, sectionText, addrDict, lines, errorList);
         
         // anexa os codigos parciais
         for (unsigned int i = 0; i < partialMachineCode.size(); ++i)
@@ -705,7 +705,7 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     }
     
     if (sectionText == -1)
-        reportError ("seção texto é obrigatória", "semântico", -1, "");
+        errorList.push_back(Error ("seção texto é obrigatória", "semântico", -1, ""));
     
     // resolve as listas de pendências (e reporta erros)
     for (unsigned int i = 0; i < labelList.size(); ++i) {
@@ -715,7 +715,7 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
             for (unsigned int j = 0; j < labelList[i].pendList.size(); ++j) {
                 int mcrLine = addrDict[labelList[i].pendList[j]]; // linha do arquivo .mcr
                 int origLine = lineDict[mcrLine-1]; // linha do arquivo original
-                reportError ("rótulo "+labelList[i].name+" não definido", "semântico", origLine, lines[mcrLine-1]);
+                errorList.push_back(Error ("rótulo "+labelList[i].name+" não definido", "semântico", origLine, lines[mcrLine-1]));
             }
             
         } else {
@@ -737,26 +737,26 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
                 
                 if (auxInfo == 1) { // é uma divisão
                     if (labelList[i].isConst == 2)
-                        reportError ("divisão por zero", "semântico", origLine, lines[mcrLine-1]);
+                        errorList.push_back(Error ("divisão por zero", "semântico", origLine, lines[mcrLine-1]));
                 } else if (auxInfo == 2) { // é um pulo
                     if (labelList[i].vectSize != 0)
-                        reportError ("pulo para seção inválida", "semântico", origLine, lines[mcrLine-1]);
+                        errorList.push_back(Error ("pulo para seção inválida", "semântico", origLine, lines[mcrLine-1]));
                 } else if (auxInfo == 3) { // tá modificando o rótulo
                     if (labelList[i].isConst != 0)
-                        reportError ("valores constantes não podem ser modificados", "semântico", origLine, lines[mcrLine-1]);
+                        errorList.push_back(Error ("valores constantes não podem ser modificados", "semântico", origLine, lines[mcrLine-1]));
                 }
                 
                 // se não for pulo, não pode acessar a área de texto
                 if (labelList[i].vectSize == 0 && auxInfo != 2)
-                    reportError ("acesso à seção de texto só é permitido para pulos", "semântico", origLine, lines[mcrLine-1]);
+                    errorList.push_back(Error ("acesso à seção de texto só é permitido para pulos", "semântico", origLine, lines[mcrLine-1]));
                 
                 // nao se pode usar offset com pulos
                 if (auxInfo == 2 && offset != 0)
-                    reportError ("o deslocamento de pulos deve ser zero", "semântico", origLine, lines[mcrLine-1]);
+                    errorList.push_back(Error ("o deslocamento de pulos deve ser zero", "semântico", origLine, lines[mcrLine-1]));
                 
                 // checa se o tamanho do rotulo bate com o indice n (rotulo + n)
                 if (offset >= labelList[i].vectSize && auxInfo != 2 && labelList[i].vectSize > 0)
-                    reportError ("indíce excede o tamanho do vetor "+labelList[i].name, "semântico", origLine, lines[mcrLine-1]);
+                    errorList.push_back(Error ("indíce excede o tamanho do vetor "+labelList[i].name, "semântico", origLine, lines[mcrLine-1]));
                 
                 machineCode[address] = labelList[i].value+offset;
                 
