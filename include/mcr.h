@@ -44,7 +44,8 @@ int createMacro (std::string &line, std::ifstream &preFile, std::string &token, 
         } else {
             // se for o final, ajusta a flag e tira o '\n' do final da definicao
             reachedEnd = 1;
-            definition.pop_back();
+            if (!definition.empty())
+                definition.pop_back();
         }
         
         if (!reachedEnd && preFile.eof())
@@ -107,8 +108,12 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
         lineStream >> token2;
         
         // checa se o token seguinte é um rótulo
-        if (token2.back() == ':')
-            errorList.push_back(Error ("mais de um rótulo em uma linha", "sintático", lineDictPre[lineCounter-1], line));
+        /*
+        if (token2.back() == ':') {
+            int pos = (int) lineStream.tellg() - token2.size();
+            errorList.push_back(Error ("mais de um rótulo em uma linha", "sintático", lineDictPre[lineCounter-1], line, pos));
+        }
+        */
         
         // verifica se esse rótulo já foi definido como uma macro
         token.pop_back();
@@ -117,29 +122,35 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
             if (macroList[i].name == token)
                 redefinition = 1;
         }
-        if (redefinition)
-            errorList.push_back(Error("redefinição de macro", "semântico", lineDictPre[lineCounter-1], line));
+        if (redefinition) {
+            int pos = 0;
+            errorList.push_back(Error("redefinição de macro", "semântico", lineDictPre[lineCounter-1], line, pos));
+        }
         
         // se for uma diretiva de macro, cria uma macro nova na lista
         if (token2 == "MACRO") {
             
             // verifica se o rótulo é válido
-            int valid = labelCheck(token, instrList, dirList);
+            int pos = 0;
+            int valid = labelCheck(token, instrList, dirList, pos);
             if (valid == -1)
-                errorList.push_back(Error("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDictPre[lineCounter-1], line));
+                errorList.push_back(Error("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDictPre[lineCounter-1], line, pos));
             else if (valid == -2)
-                errorList.push_back(Error("rótulos não podem começar com números", "léxico", lineDictPre[lineCounter-1], line));
+                errorList.push_back(Error("rótulos não podem começar com números", "léxico", lineDictPre[lineCounter-1], line, pos));
             else if (valid == -3)
-                errorList.push_back(Error("caracter inválido encontrado no rótulo", "léxico", lineDictPre[lineCounter-1], line));
+                errorList.push_back(Error("caracter inválido encontrado no rótulo", "léxico", lineDictPre[lineCounter-1], line, pos));
             else if (valid == -4)
-                errorList.push_back(Error("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDictPre[lineCounter-1], line));
+                errorList.push_back(Error("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDictPre[lineCounter-1], line, pos));
             else if (valid == -5)
-                errorList.push_back(Error("declaração de rótulo vazia", "sintático", lineDictPre[lineCounter-1], line));
+                errorList.push_back(Error("declaração de rótulo vazia", "sintático", lineDictPre[lineCounter-1], line, pos));
             
             // cria uma macro na lista
             int status = createMacro (line, preFile, token, macroList, lineCounter);
-            if (status == -1)
-                errorList.push_back(Error("a definição de uma macro deve terminar com END", "semântico", lineDictPre[lineCounter-1], line));
+            if (status == -1) {
+                pos = 0;
+                errorList.push_back(Error("a definição de uma macro deve terminar com END", "semântico", lineDictPre[lineCounter-1], line, pos));
+            }
+                
             
         }
     
