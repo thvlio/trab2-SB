@@ -6,7 +6,7 @@
 int constCheck (std::string&, int&);
 int spaceCommand (std::stringstream&, std::string&, std::vector<int>&, int&, std::vector<Label>&, int&);
 int constCommand (std::stringstream&, std::string&, std::vector<int>&, int&, std::vector<Label>&, int&);
-int assembleInstr (Instr&, int&, std::vector<int>&, std::vector<Label>&, std::stringstream&, std::vector<Instr>&, std::vector<Dir>&);
+int assembleInstr (Instr&, int&, std::vector<int>&, std::vector<Label>&, std::stringstream&, std::vector<Instr>&, std::vector<Dir>&, int&);
 std::vector<int> asmParser (std::ifstream&, std::vector<Label>&, int&, int&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&, int&, int&, std::vector<int>&, std::vector<std::string>&, std::vector<Error>&);
 void assembleCode (std::string, std::string, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&,std::vector<Error>&);
 
@@ -72,7 +72,9 @@ int spaceCommand (std::stringstream &lineStream, std::string &labelName, std::ve
     std::string token2;
     lineStream >> token2;
     
-    pos = labelName.size()+1 + 1 + 6;
+    pos = 6;
+    if (!labelName.empty())
+        pos += labelName.size()+1 + 1;
     
     if (token2.empty()) // se não tem argumento, só reserva um espaço
         amount = 1;    
@@ -133,7 +135,9 @@ int constCommand (std::stringstream &lineStream, std::string &labelName, std::ve
     std::string token2;
     lineStream >> token2;
     
-    pos = labelName.size()+1 + 1 + 6;
+    pos = 6;
+    if (!labelName.empty())
+        pos += labelName.size()+1 + 1;
     
     if (token2.empty()) // checa se foi dado um argumento
         return -1;
@@ -184,7 +188,7 @@ assembleInstr: le a instrucao e seus argumentos, e passa para codigo de maquina
 entrada:
 saida: codigo de erro da montagem
 */
-int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMachineCode, std::vector<Label> &labelList, std::stringstream &lineStream, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
+int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMachineCode, std::vector<Label> &labelList, std::stringstream &lineStream, std::vector<Instr> &instrList, std::vector<Dir> &dirList, int &pos) {
     
     // salva o codigo de maquina da instrucao
     partialMachineCode.push_back(instr.opcode);
@@ -213,12 +217,35 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
         
         int offset; // offset para acesso aos vetores
         
-        // se for COPY (2 args) ou qualquer instrução com mais de um argumento (atualmente só tem o COPY mesmo)
+        // se for COPY (2 args) ou qualquer instrução com mais de um argumento (atualmente só tem o COPY mesmo), verifica todos menos o último argumento esperado (somente o 1o, no caso de COPY)
         if (instr.numArg > 1 && i < instr.numArg-1) {
+            
+            // procura virgula no meio do token
+            std::size_t comma = token.find(",");
+            if (comma != std::string::npos) {
+                if (comma != 0 && comma != token.size()-1)
+                    return -18; // tá no meio do token, entao nao separou por virgula do segundo argumento
+            }
+            
+            if (token.front() == ',')
+                return -20; // virgula no começo do token = falta argumento antes
+                
+            // procura sinal de soma no token
+            std::size_t add = token.find("+");
+            if (add != std::string::npos) {
+                if (add == 0)
+                    return -13; // indexacao incompleta
+                else
+                    return -19; // precisa ter espaço entre a soma
+            }
             
             // se no final do token tiver virgula
             if (token.back() == ',') {
+                
                 token.pop_back(); // tira a virgula
+                
+                if (token.empty())
+                    return -1; // se tiver colocado só uma vírgula
                 
                 int aux; // checa se está tentando se fazer endereçamento imediato
                 int status = integerCheck (token, aux);
@@ -247,14 +274,14 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
                 lineStream >> token2;
                 if (token2.empty())
                     return -1;
-                if (token2 == ",")
+                if (token2.front() == ',')
                     return -2; // se for virgula, avisa que a virgula nao deve ser separada por espaço do 1o operador
                 else if (token2 != "+") {
                     int valid = labelCheck(token2, instrList, dirList); // procura erros no rotulo
                     if (valid == 0)
                         return -7; // faltando virgula entre os operandos
-                    else
-                        return -6; // op de indexacao invalida/rotulo invalido
+                    else if (token2.front() == '+')
+                        return -19; // deve separar o sinal de soma por espaços
                 }
                 
                 // le o proximo token (esperado que seja um numero valido)
@@ -296,6 +323,25 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
             }
             
         } else { // se nao for esperada uma virgula
+            
+            // procura virgula no meio do token
+            std::size_t comma = token.find(",");
+            if (comma != std::string::npos) {
+                if (comma != 0 && comma != token.size()-1)
+                    return -18; // tá no meio do token, entao nao separou por virgula do segundo argumento
+            }
+            
+            // procura sinal de soma no token
+            std::size_t add = token.find("+");
+            if (add != std::string::npos) {
+                if (add == 0)
+                    return -13; // indexacao incompleta
+                else
+                    return -19; // precisa ter espaço entre a soma
+            }
+
+            if (token.front() == ',')
+                return -20; // virgula no começo do token = falta argumento
             
             int aux; // checa se está tentando se fazer endereçamento imediato
             int status = integerCheck (token, aux);
@@ -340,6 +386,9 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
                     return -8;
             
             } else {
+                
+                if (token2.front() == '+')
+                    return -19; // deve separar o sinal de soma por espaços
                 
                 // checa se esta tentando declarar outro rotulo
                 if (token2.back() == ':') {
@@ -432,7 +481,7 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
                 
                 // checa se o tamanho do rotulo bate com o indice n (rotulo + n)
                 if (offset >= labelList[found].vectSize && labelList[found].vectSize > 0)
-                    return -(found+18); // retorna onde ta o rotulo
+                    return -(found+21); // retorna onde ta o rotulo
                 
                 int address = labelList[found].value;
                 partialMachineCode.push_back(address+offset);
@@ -596,50 +645,62 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         
         // se for uma instrução, monta
         if (isInstruction >= 0) {
+            int pos = 0;
+            if (!labelNameBackup.empty())
+                pos = labelNameBackup.size()+1 + 1;
+            else if (colon)
+                pos += 2;
             Instr instr = instrList[isInstruction];
-            int status = assembleInstr (instr, addrCounter, partialMachineCode, labelList, lineStream, instrList, dirList);
+            pos += instr.name.size()+1;
+            int status = assembleInstr (instr, addrCounter, partialMachineCode, labelList, lineStream, instrList, dirList, pos);
             if (status == -1) {
                 if (instr.numArg == 0)
-                    errorList.push_back(Error("não é esperado nenhum argumento para "+instr.name, "sintático", lineDict[lineCounter-1], line));
+                    errorList.push_back(Error("não é esperado nenhum argumento para "+instr.name, "sintático", lineDict[lineCounter-1], line, pos));
                 else if (instr.numArg == 1)
-                    errorList.push_back(Error("é esperado 1 argumento para "+instr.name, "sintático", lineDict[lineCounter-1], line));
+                    errorList.push_back(Error("é esperado 1 argumento para "+instr.name, "sintático", lineDict[lineCounter-1], line, pos));
                 else if (instr.numArg == 2)
-                    errorList.push_back(Error("são esperados 2 argumentos para "+instr.name, "sintático", lineDict[lineCounter-1], line));
+                    errorList.push_back(Error("são esperados 2 argumentos para "+instr.name, "sintático", lineDict[lineCounter-1], line, pos));
             } else if (status == -2)
-                errorList.push_back(Error("a vírgula não deve ser separada do primeiro operando por espaço", "sintático", lineDict[lineCounter-1], line));
+                errorList.push_back(Error("a vírgula não deve ser separada do primeiro operando por espaço", "sintático", lineDict[lineCounter-1], line, pos));
             else if (status == -3)
-                errorList.push_back(Error ("divisão por zero", "semântico", lineDict[lineCounter-1], line));
+                errorList.push_back(Error ("divisão por zero", "semântico", lineDict[lineCounter-1], line, pos));
             else if (status == -4)
-                errorList.push_back(Error ("pulo para seção inválida", "semântico", lineDict[lineCounter-1], line));
+                errorList.push_back(Error ("pulo para seção inválida", "semântico", lineDict[lineCounter-1], line, pos));
             else if (status == -5)
-                errorList.push_back(Error ("valores constantes não podem ser modificados", "semântico", lineDict[lineCounter-1], line));
+                errorList.push_back(Error ("valores constantes não podem ser modificados", "semântico", lineDict[lineCounter-1], line, pos));
             else if (status == -6)
-                errorList.push_back(Error ("operação de indexacão inválida", "sintático", lineDict[lineCounter-1], line));
+                errorList.push_back(Error ("operação de indexacão inválida", "sintático", lineDict[lineCounter-1], line, pos));
             else if (status == -7)
-                errorList.push_back(Error ("deve haver uma vírgula entre os dois operandos da instrução", "sintático", lineDict[lineCounter-1], line));
+                errorList.push_back(Error ("deve haver uma vírgula entre os dois operandos da instrução", "sintático", lineDict[lineCounter-1], line, pos));
             else if (status == -8)
-                errorList.push_back(Error ("o deslocamento deve ser um número inteiro maior ou igual a zero", "sintático", lineDict[lineCounter-1], line));
+                errorList.push_back(Error ("o deslocamento deve ser um número inteiro maior ou igual a zero", "sintático", lineDict[lineCounter-1], line, pos));
             else if (status == -9)
-                errorList.push_back(Error ("tamanho do rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDict[lineCounter-1], line));
+                errorList.push_back(Error ("tamanho do rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDict[lineCounter-1], line, pos));
             else if (status == -10)
-                errorList.push_back(Error ("rótulos não podem começar com números", "léxico", lineDict[lineCounter-1], line));
+                errorList.push_back(Error ("rótulos não podem começar com números", "léxico", lineDict[lineCounter-1], line, pos));
             else if (status == -11)
-                errorList.push_back(Error ("caracter inválido encontrado no rótulo", "léxico", lineDict[lineCounter-1], line));
+                errorList.push_back(Error ("caracter inválido encontrado no rótulo", "léxico", lineDict[lineCounter-1], line, pos));
             else if (status == -12)
-                errorList.push_back(Error ("rótulo não pode ter nome de instrução ou diretiva", "sintático", lineDict[lineCounter-1], line));
+                errorList.push_back(Error ("rótulo não pode ter nome de instrução ou diretiva", "sintático", lineDict[lineCounter-1], line, pos));
             else if (status == -13)
-                errorList.push_back(Error ("estrutura da indexação incompleta", "sintático", lineDict[lineCounter-1], line));
+                errorList.push_back(Error ("estrutura da indexação incompleta", "sintático", lineDict[lineCounter-1], line, pos));
             else if (status == -14)
-                errorList.push_back(Error ("acesso à seção de texto só é permitido para pulos", "semântico", lineDict[lineCounter-1], line));
+                errorList.push_back(Error ("acesso à seção de texto só é permitido para pulos", "semântico", lineDict[lineCounter-1], line, pos));
             else if (status == -15)
-                errorList.push_back(Error ("o deslocamento de pulos deve ser zero", "semântico", lineDict[lineCounter-1], line));
+                errorList.push_back(Error ("o deslocamento de pulos deve ser zero", "semântico", lineDict[lineCounter-1], line, pos));
             else if (status == -16)
-                errorList.push_back(Error ("tentativa de endereçamento imediato", "sintático", lineDict[lineCounter-1], line));
+                errorList.push_back(Error ("tentativa de endereçamento imediato", "sintático", lineDict[lineCounter-1], line, pos));
             else if (status == -17)
-                errorList.push_back(Error ("só um rótulo pode ser declarado, e no começo da linha", "sintático", lineDict[lineCounter-1], line));
-            else if (status <= -18) {
-                int labelPos = -(status+18); // recupera a posicao do rotulo
-                errorList.push_back(Error ("indíce excede o tamanho do vetor "+labelList[labelPos].name, "semântico", lineDict[lineCounter-1], line));
+                errorList.push_back(Error ("só um rótulo pode ser declarado, e no começo da linha", "sintático", lineDict[lineCounter-1], line, pos));
+            else if (status == -18)
+                errorList.push_back(Error ("deve haver espaço em branco entre a vírgula e o segundo argumento", "sintático", lineDict[lineCounter-1], line, pos));  
+            else if (status == -19)
+                errorList.push_back(Error ("deve haver espaço em branco antes e depois do sinal de soma", "sintático", lineDict[lineCounter-1], line, pos));
+            else if (status == -20)
+                errorList.push_back(Error ("é esperado um argumento antes da vírgula", "sintático", lineDict[lineCounter-1], line, pos));
+            else if (status <= -21) {
+                int labelPos = -(status+21); // recupera a posicao do rotulo
+                errorList.push_back(Error ("indíce excede o tamanho do vetor "+labelList[labelPos].name, "semântico", lineDict[lineCounter-1], line, pos));
             }
                 
             if (section != 0) {

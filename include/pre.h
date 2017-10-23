@@ -27,9 +27,25 @@ void preReadLine (std::string &line, std::ifstream &asmFile, std::vector<Label> 
     // transforma a string p caixa alta
     std::transform (line.begin(), line.end(), line.begin(), ::toupper);
     
-    // ignora os comentarios, se houver algum (e retira os espaços em branco)
+    // ignora os comentarios, se houver algum
     std::stringstream lineStream (line);
     getline(lineStream, line, ';');
+    
+    // retira os espaços em branco entre os tokens
+    lineStream.str(line);
+    lineStream.clear();
+    std::vector<std::string> tokenList;
+    while (!lineStream.eof()) {
+        std::string tempToken;
+        lineStream >> tempToken;
+        tokenList.push_back(tempToken);
+    }
+    line.clear();
+    for (unsigned int i = 0; i < tokenList.size(); ++i) {
+        line = line + tokenList[i] + ' ';
+        if (i == tokenList.size()-1)
+            line.pop_back();
+    }
     
     // retira os espaços em branco, caso existam, no final da linha
     while (line.back() == ' ' || line.back() == '\t' || line.back() == '\n' || line.back() == '\v' || line.back() == '\f' || line.back() == '\r')
