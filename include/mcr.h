@@ -107,14 +107,6 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
         std::string token2;
         lineStream >> token2;
         
-        // checa se o token seguinte é um rótulo
-        /*
-        if (token2.back() == ':') {
-            int pos = (int) lineStream.tellg() - token2.size();
-            errorList.push_back(Error ("mais de um rótulo em uma linha", "sintático", lineDictPre[lineCounter-1], line, pos));
-        }
-        */
-        
         // verifica se esse rótulo já foi definido como uma macro
         token.pop_back();
         int redefinition = 0;
@@ -134,7 +126,7 @@ void mcrParser (std::string &line, std::ifstream &preFile, std::vector<Macro> &m
             int pos = 0;
             int valid = labelCheck(token, instrList, dirList, pos);
             if (valid == -1)
-                errorList.push_back(Error("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDictPre[lineCounter-1], line, pos));
+                errorList.push_back(Error("tamanho do rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDictPre[lineCounter-1], line, pos));
             else if (valid == -2)
                 errorList.push_back(Error("rótulos não podem começar com números", "léxico", lineDictPre[lineCounter-1], line, pos));
             else if (valid == -3)

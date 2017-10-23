@@ -62,7 +62,7 @@ int constCheck (std::string &value, int &conv) {
 /*
 spaceCommand: executa a diretiva space, e configura o rótulo
 entrada:
-saida:
+saida: codigo de erro
 */
 int spaceCommand (std::stringstream &lineStream, std::string &labelName, std::vector<int> &partialMachineCode, int &addrCounter, std::vector<Label> &labelList) {
     
@@ -115,7 +115,7 @@ int spaceCommand (std::stringstream &lineStream, std::string &labelName, std::ve
 /*
 constCommand: executa a diretiva const, e configura o rótulo
 entrada:
-saida:
+saida: codigo de erro
 */
 int constCommand (std::stringstream &lineStream, std::string &labelName, std::vector<int> &partialMachineCode, int &addrCounter, std::vector<Label> &labelList) {
     
@@ -166,7 +166,7 @@ int constCommand (std::stringstream &lineStream, std::string &labelName, std::ve
 /*
 assembleInstr: le a instrucao e seus argumentos, e passa para codigo de maquina
 entrada:
-saida:
+saida: codigo de erro da montagem
 */
 int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMachineCode, std::vector<Label> &labelList, std::stringstream &lineStream, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
     
@@ -481,17 +481,18 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         
         // verifica se o rótulo é válido
         token.pop_back();
-        int valid = labelCheck(token, instrList, dirList);
+        int pos = 0;
+        int valid = labelCheck(token, instrList, dirList, pos);
         if (valid == -1)
-            errorList.push_back(Error("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDict[lineCounter-1], line));
+            errorList.push_back(Error("tamanho do rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDict[lineCounter-1], line, pos));
         else if (valid == -2)
-            errorList.push_back(Error("rótulos não podem começar com números", "léxico", lineDict[lineCounter-1], line));
+            errorList.push_back(Error("rótulos não podem começar com números", "léxico", lineDict[lineCounter-1], line, pos));
         else if (valid == -3)
-            errorList.push_back(Error("caracter inválido encontrado no rótulo", "léxico", lineDict[lineCounter-1], line));
+            errorList.push_back(Error("caracter inválido encontrado no rótulo", "léxico", lineDict[lineCounter-1], line, pos));
         else if (valid == -4)
-            errorList.push_back(Error("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDict[lineCounter-1], line));
+            errorList.push_back(Error("rótulo não pode ter nome de instrução ou diretiva", "semântico", lineDict[lineCounter-1], line, pos));
         else if (valid == -5)
-            errorList.push_back(Error("declaração de rótulo vazia", "sintático", lineDict[lineCounter-1], line));
+            errorList.push_back(Error("declaração de rótulo vazia", "sintático", lineDict[lineCounter-1], line, pos));
         
         // verifica se o rótulo já está na lista de rótulos e se já foi definido
         int alreadyDefined = 0;
@@ -507,8 +508,10 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         }
         
         // ja foi definido (da erro de simbolo ja definido)
-        if (alreadyDefined)
-            errorList.push_back(Error("símbolo já definido", "semântico", lineDict[lineCounter-1], line));
+        if (alreadyDefined) {
+            int pos = 0;
+            errorList.push_back(Error("símbolo já definido", "semântico", lineDict[lineCounter-1], line, pos));
+        }   
             
         // nao foi definido mas ja foi mencionado (define ele agora)
         else if (alreadyMentioned) {
@@ -536,8 +539,10 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
         lineStream >> token;
         
         // ja checa pra ver se não é mais um rótulo
-        if (token.back() == ':')
-            errorList.push_back(Error ("mais de um rótulo em uma linha", "sintático", lineDict[lineCounter-1], line));
+        if (token.back() == ':') {
+            int pos = labelNameBackup.size()+1 + 1;
+            errorList.push_back(Error ("mais de um rótulo em uma linha", "sintático", lineDict[lineCounter-1], line, pos));
+        }
         
     }
     
@@ -554,10 +559,15 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
     }
     
     // se nao encontrar o comando em nenhuma tabela, nao é um comando reconhecido
-    if (isInstruction == -1 && isDirective == -1)
-        errorList.push_back(Error("comando não reconhecido", "sintático", lineDict[lineCounter-1], line));
-        
-    else {
+    if (isInstruction == -1 && isDirective == -1) {
+        if (token.back() != ':') {
+            int pos = 0;
+            if (!labelNameBackup.empty())
+                pos = labelNameBackup.size()+1 + 1;
+            errorList.push_back(Error("comando não reconhecido", "léxico", lineDict[lineCounter-1], line, pos));
+        }
+            
+    } else {
         
         // se for uma instrução, monta
         if (isInstruction >= 0) {
@@ -585,7 +595,7 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
             else if (status == -8)
                 errorList.push_back(Error ("o deslocamento deve ser um número inteiro maior ou igual a zero", "sintático", lineDict[lineCounter-1], line));
             else if (status == -9)
-                errorList.push_back(Error ("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDict[lineCounter-1], line));
+                errorList.push_back(Error ("tamanho do rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineDict[lineCounter-1], line));
             else if (status == -10)
                 errorList.push_back(Error ("rótulos não podem começar com números", "léxico", lineDict[lineCounter-1], line));
             else if (status == -11)
@@ -603,12 +613,16 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
             else if (status == -17)
                 errorList.push_back(Error ("só um rótulo pode ser declarado, e no começo da linha", "sintático", lineDict[lineCounter-1], line));
             else if (status <= -18) {
-                int pos = -(status+18); // recupera a posicao do rotulo
-                errorList.push_back(Error ("indíce excede o tamanho do vetor "+labelList[pos].name, "semântico", lineDict[lineCounter-1], line));
+                int labelPos = -(status+18); // recupera a posicao do rotulo
+                errorList.push_back(Error ("indíce excede o tamanho do vetor "+labelList[labelPos].name, "semântico", lineDict[lineCounter-1], line));
             }
                 
-            if (section != 0)
-                errorList.push_back(Error("instruções devem estar na seção de texto", "semântico", lineDict[lineCounter-1], line));
+            if (section != 0) {
+                int pos = 0;
+                if (!labelNameBackup.empty())
+                    pos = labelNameBackup.size()+1 + 1;
+                errorList.push_back(Error("instruções devem estar na seção de texto", "semântico", lineDict[lineCounter-1], line, pos));
+            }
             
         // se for uma diretiva, faz uma função específica
         } else if (isDirective >= 0) {
@@ -617,6 +631,12 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
             
             // se for SECTION, atualiza a informação da seção
             if (dir.name == "SECTION") {
+                
+                if (!labelNameBackup.empty()) {
+                    int pos = 0;
+                    errorList.push_back(Error("não podem ser declarados rótulos em seções", "sintático", lineDict[lineCounter-1], line, pos));
+                }
+                
                 std::string token2;
                 lineStream >> token2;
                 if (token2 == "TEXT") {
@@ -624,9 +644,13 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                     sectionText = 0;
                 } else if (token2 == "DATA")
                     section = 1;
-                else
-                    errorList.push_back(Error("seção não reconhecida", "sintático", lineDict[lineCounter-1], line));
-                    
+                else {
+                    int pos = token.size()+1;
+                    if (!labelNameBackup.empty())
+                        pos += labelNameBackup.size()+1 + 1;
+                    errorList.push_back(Error("seção não reconhecida", "sintático", lineDict[lineCounter-1], line, pos));
+                }
+            
             // se for SPACE, verifica os argumentos e coloca no código de máquina as reservas
             } else if (dir.name == "SPACE") {
                 int status = spaceCommand (lineStream, labelNameBackup, partialMachineCode, addrCounter, labelList);
@@ -705,7 +729,7 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     }
     
     if (sectionText == -1)
-        errorList.push_back(Error ("seção texto é obrigatória", "semântico", -1, ""));
+        errorList.push_back(Error ("seção texto é obrigatória", "semântico", -1, "", 0));
     
     // resolve as listas de pendências (e reporta erros)
     for (unsigned int i = 0; i < labelList.size(); ++i) {

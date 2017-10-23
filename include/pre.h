@@ -204,14 +204,6 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
         std::string token2;
         lineStream >> token2;
         
-        // checa se o token seguinte é um rótulo
-        /*
-        if (token2.back() == ':') {
-            int pos = (int) lineStream.tellg() - token2.size();
-            errorList.push_back(Error("mais de um rótulo em uma linha", "sintático", lineCounter, line, pos));
-        }
-        */  
-        
         // se token2 estiver vazio, anexa a proxima linha
         if (token2.empty()) {
             appendNextLine (line, lineStream, asmFile, labelList, lineCounter);
@@ -226,7 +218,7 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
             int pos = 0;
             int valid = labelCheck(token, instrList, dirList, pos);
             if (valid == -1)
-                errorList.push_back(Error("tamanho o rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineCounter, line, pos));
+                errorList.push_back(Error("tamanho do rótulo deve ser menor ou igual a 100 caracteres", "léxico", lineCounter, line, pos));
             else if (valid == -2)
                 errorList.push_back(Error("rótulos não podem começar com números", "léxico", lineCounter, line, pos));
             else if (valid == -3)
