@@ -107,15 +107,14 @@ saida: inteiro indicando se houve erro (lista de rotulos alterada por referencia
 */
 int equCommand (std::stringstream &lineStream, std::vector<Label> &labelList, std::string &token, int &pos) {
     
-    // ajeita a posicao
-    pos = lineStream.tellg();
-    
     // le o texto a ser substituido
     std::string equ;
     lineStream >> equ;
     
     if (equ.empty()) // se nao foram passados argumentos
         return -1;
+        
+    pos = equ.size()+1;
     
     Label label (token, equ); // cria o rotulo com o valor associado
     labelList.push_back(label); // coloca o rotulo na lista de rotulos definidos
@@ -127,6 +126,8 @@ int equCommand (std::stringstream &lineStream, std::vector<Label> &labelList, st
     if (!token2.empty()) // se nao estiver vazio, deu mais argumentos que o necessario
         return -2;
     
+    pos += token2.size()+1;
+        
     return 0;
     
 }
@@ -143,6 +144,11 @@ int ifCommand (std::stringstream &lineStream, std::ifstream &asmFile, int &lineC
     // le o numero seguinte (a busca ja trocou o rotulo por um valor)
     std::string value;
     lineStream >> value;
+    
+    if (value.empty())
+        return -3;
+        
+    pos = value.size()+1;
     
     // tenta converter o numero para um inteiro
     int conv = -1;
@@ -231,7 +237,9 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
                 errorList.push_back(Error("declaração de rótulo vazia", "sintático", lineCounter, line, pos));
             
             // executa o comando da diretiva
+            pos = 0;
             int status = equCommand (lineStream, labelList, token, pos);
+            pos += token.size()+1 + token2.size()+1 + 1;
             if (status == -1)
                 errorList.push_back(Error("definição de EQU vazia", "sintático", lineCounter, line, pos));
             else if (status == -2)
@@ -248,10 +256,16 @@ void preParser (std::string &line, std::ifstream &asmFile, std::vector<Label> &l
         // executa o comando da diretiva
         int pos = 0;
         int status = ifCommand (lineStream, asmFile, lineCounter, pos);
-        if (status == -1)
+        if (status == -1) {
+            pos = 3;
             errorList.push_back(Error("parâmetro de IF deveria ser um número decimal", "sintático", lineCounter, line, pos));
-        else if (status == -2)
+        } else if (status == -2) {
+            pos += 3;
             errorList.push_back(Error("IF só recebe um argumento", "sintático", lineCounter, line, pos));
+        } else if (status == -3) {
+            pos = 3;
+            errorList.push_back(Error("declaração de IF sem argumentos", "sintático", lineCounter, line, pos));
+        }
             
         // esvazia a string p nao salvar a linha no codigo
         line.clear();

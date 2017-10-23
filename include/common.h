@@ -11,7 +11,8 @@ std::vector<Dir> getDirList (std::string);
 int integerCheck (std::string, int&);
 void reportError (std::string, std::string, int, std::string);
 int labelCheck (std::string, std::vector<Instr>&, std::vector<Dir>&, int&);
-int labelCheck (std::string, std::vector<Instr>&, std::vector<Dir>&); // REMOVER
+int labelCheck (std::string, std::vector<Instr>&, std::vector<Dir>&); // REMOVER FUTURAMENTE
+bool operator< (const Error&, const Error&);
 
 
 /*      DEFINIÇÕES DAS FUNÇÕES     */
@@ -301,10 +302,19 @@ void reportList (std::vector<Error> &errorList) {
 
 
 
+/*
+operator<: overload do operator < para poder usar std::sort
+entrada: duas structs do tipo Error
+saida: se a primeira é menor que a segunda (compara o num de linhas)
+*/
+bool operator< (const Error &A, const Error &B) {
+    return (A.lineNum < B.lineNum);
+}
 
 
 
-// REMOVER
+
+// REMOVER FUTURAMENTE
 int labelCheck (std::string label, std::vector<Instr> &instrList, std::vector<Dir> &dirList) {
     
     // checa se o rótulo está vazio

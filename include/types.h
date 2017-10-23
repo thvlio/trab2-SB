@@ -94,8 +94,4 @@ struct Error {
     // metodos
     Error () {};
     Error (std::string msg, std::string tp, int lnn, std::string ln, int ps=0): message(msg), type(tp), lineNum(lnn), line(ln), pos(ps) {};
-    // overload do operator < para poder usar std::sort
-    bool operator< (const Error &B) {
-        return (this->lineNum < B.lineNum);
-    }
 };
