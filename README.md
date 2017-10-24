@@ -8,19 +8,17 @@ Grupo:
 
 # Montador
 Para compilar, use:
-* g++ -std=c++11 -Wall main.cpp `nome.out`
-* `nome.out`: o nome do arquivo executável (ex: `main.out`)
+* g++ -std=c++11 -Wall assembler.cpp `nome.out`
+* `nome.out`: o nome do arquivo executável (ex: `assembler.out`)
     
 Para executar, use:
-* `./nome` `-x` `yyy.asm` `zzz.o`
+* `./nome` `xxx.asm yyy.asm zzz.asm`
 * `./nome`: o nome dado ao executável (ex: `./main.out`)
-* `-x`: diretiva de compilação (ex: `-o`)
-* `yyy.asm`: nome do arquivo de entrada (ex: `bin.asm`)
-* `zzz.o`: nome do arquivo de saída (ex: `bin.o`)
+* `xxx.asm yyy.asm zzz.asm`: nomes de 1 a 3 arquivos de entrada diferentes (ex: `bin1.asm bin2.asm bin3.asm`)
 
 Exemplo de compilação e execução:
-* `g++ -std=c++11 -Wall main.cpp main.out`
-* `./main.out -o bin.asm bin.o`
+* `g++ -std=c++11 -Wall assembler.cpp assembler.out`
+* `./assembler.out -o bin1.asm bin2.asm bin3.asm`
 
 # Ligador
 .

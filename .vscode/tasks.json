@@ -4,14 +4,46 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "taskName": "Compilation (g++)",
+            "taskName": "Compilation (g++) [assembler.cpp]",
             "type": "shell",
             "command": "g++",
-            "args": ["-std=c++11", "-Wall", "main.cpp", "-o", "main.out"],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
+            "args": [
+                "-std=c++11",
+                "-Wall",
+                "assembler.cpp",
+                "-o",
+                "main.out"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "taskName": "Compilation (g++) [linker.cpp]",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "-std=c++11",
+                "-Wall",
+                "linker.cpp",
+                "-o",
+                "main.out"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "taskName": "Compilation (g++) [loader.cpp]",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "-std=c++11",
+                "-Wall",
+                "loader.cpp",
+                "-o",
+                "main.out"
+            ],
+            "group": "build",
+            "problemMatcher": []
         }
     ]
 }

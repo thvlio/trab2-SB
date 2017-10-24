@@ -1,15 +1,15 @@
-#include "include/types.h"
-#include "include/common.h"
-#include "include/pre.h"
-#include "include/mcr.h"
-#include "include/asm.h"
+#include "include/assembler/types.h"
+#include "include/assembler/common.h"
+#include "include/assembler/pre.h"
+#include "include/assembler/mcr.h"
+#include "include/assembler/asm.h"
 
 // compilar com
-// g++ -std=c++11 -Wall main.cpp -o main.out
+// g++ -std=c++11 -Wall assembler.cpp -o assembler.out
 // ou entao com CTRL SHIFT B no VSCODE
 
 // rodar com
-// ./main.out -x xxx.asm yyy.o
+// ./assembler.out -w xxx.asm yyy.asm zzz.asm
 
 int main (int argc, char *argv[]) {
     
