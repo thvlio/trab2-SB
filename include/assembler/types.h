@@ -63,6 +63,8 @@ struct Label {
     std::vector<int> posList; // lista de posição do rótulo na linha
     int isConst; // se é um const ou não (0: nao eh const, 1: eh const, 2: é const = 0)
     int vectSize; // tamanho do vetor, para o caso de ser um space. 0 indica que o rótulo é da área de texto
+    bool isExtern; // se o símbolo é externo
+    bool isPublic; // se o símbolo é público
     // metodos
     Label () {};
     Label (std::string nm, std::string eq): name(nm), equ(eq) {};

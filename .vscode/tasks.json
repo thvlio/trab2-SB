@@ -12,7 +12,7 @@
                 "-Wall",
                 "assembler.cpp",
                 "-o",
-                "main.out"
+                "assembler.out"
             ],
             "group": "build",
             "problemMatcher": []
@@ -26,7 +26,7 @@
                 "-Wall",
                 "linker.cpp",
                 "-o",
-                "main.out"
+                "linker.out"
             ],
             "group": "build",
             "problemMatcher": []
@@ -40,7 +40,7 @@
                 "-Wall",
                 "loader.cpp",
                 "-o",
-                "main.out"
+                "loader.out"
             ],
             "group": "build",
             "problemMatcher": []

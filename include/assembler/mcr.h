@@ -37,7 +37,7 @@ int createMacro (std::string &line, std::ifstream &preFile, std::string &token, 
         getline (preFile, auxLine);
         lineCounter++;
         
-        if (auxLine != "END") {
+        if (auxLine != "ENDMACRO") {
             // se nao for o final, anexa na definicao
             definition = definition + auxLine + '\n';
             numLines++;

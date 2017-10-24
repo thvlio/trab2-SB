@@ -11,7 +11,7 @@ Modifique o seu trabalho anterior para realizar um montador que consiga trabalha
     [----]
 
 O montador então deve receber de 1 a 3 programas de entrada, por argumento, um seguido do outro (ex.: ./montador prog1.asm prog2.asm prog3.asm).
-    [----]
+    [++++]
 
 Se um único programa foi colocado então o mesmo NÃO deve ter as diretivas BEGIN e END.
     [----]
@@ -23,7 +23,7 @@ Este então é o único teste de erro que o montador deve fazer, todos os testes
     [----]
 
 O montador deve então dar como saída de 1 a 3 arquivos objetos.
-    [----]
+    [++++]
 
 Em todos eles deve existir um cabeçalho com pelo menos as seguintes informações:
     nome do programa (pode ser o mesmo nome do arquivo) [----]
@@ -37,7 +37,7 @@ Além disso, se necessário o cabeçalho deve também incluir a TABELA DE USO e 
     [----]
     
 Os arquivos de saída devem ser .o.
-    [----]
+    [++++]
     
 =========================
 ======== LIGADOR ========

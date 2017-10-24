@@ -4,63 +4,67 @@
 
 /*      DECLARAÇÕES DAS FUNÇÕES     */
 int errorCheck (int, char**, std::string, std::string);
-std::string o2pre (std::string);
-std::string o2mcr (std::string);
+std::string asm2pre (std::string);
+std::string asm2mcr (std::string);
+std::string asm2o (std::string);
 std::vector<Instr> getInstrList (std::string);
 std::vector<Dir> getDirList (std::string);
 int integerCheck (std::string, int&);
 void reportError (std::string, std::string, int, std::string);
 int labelCheck (std::string, std::vector<Instr>&, std::vector<Dir>&, int&);
+void reportList (std::vector<Error>&, std::string);
 bool operator< (const Error&, const Error&);
 
 
 /*      DEFINIÇÕES DAS FUNÇÕES     */
 
 /*
-errorCheck: verifica se ha algum erro nos argumentos de entrada do programa ou no arquivo do codigo de entrada
-entrada: argc e argv recebidos pela funcao main()
-saida: um inteiro indicando se houve erro (0 se nao, -1 se sim)
+errorCheck: verifica se ha algum erro nos argumentos de entrada do programa, nos arquivos de entrada fornecidos e nos arquivos das tabelas de instruções e diretivas
+entradas: argc e argv e os nomes dos arquivos com as tabelas de instruções e diretivas
+saída: 0 se não deu erro, -1 se deu erro
 */
 int errorCheck (int argc, char *argv[], std::string instrFileName, std::string dirFileName) {
     
     // verifica o numero de argumentos dados
-    if (argc != 4) {
-        std::cout << "Número inválido de argumentos: " << argc-1 << " (3 esperados)" << "\n";
+    if (argc < 2 || argc > 4) {
+        std::cout << "Devem ser fornecidos 1, 2 ou 3 arquivos de entrada. (" << argc-1 << " fornecidos)\n";
         return -1;
     }
     
     // guarda os argumentos em strings
-    std::string operation (*(argv+1)),
-        inFileName (*(argv+2)),
-        outFileName (*(argv+3));
+    std::vector<std::string> inFileNames;
+    for (int i = 1; i < argc; ++i)
+        inFileNames.push_back(std::string(*(argv+i)));
     
-    // verifica se a operacao eh valida
-    if (operation != "-p" && operation != "-m" && operation != "-o") {
-        std::cout << "Operação inválida: " << operation << "\n";
-        return -1;
+    // verifica se as extensao dos arquivos de entrada são .asm
+    bool extError = false;
+    for (unsigned int i = 0; i < inFileNames.size(); ++i) {
+        if (inFileNames[i].size() < 5) {
+            std::cout << "Extensão do arquivo de entrada " << inFileNames[i] << " não suportada (somente .asm)" << "\n";
+            extError = true;
+        } else {
+            std::string inExt = inFileNames[i].substr(inFileNames[i].size() - 4);
+            if (inExt != ".asm") {
+                std::cout << "Extensão do arquivo de entrada " << inFileNames[i] << " não suportada (somente .asm)" << "\n";
+                extError = true;
+            }
+        }
     }
-    
-    // verifica se as extensao do arquivo de entrada eh .asm
-    std::string inExt = inFileName.substr(inFileName.size() - 4);
-    if (inExt != ".asm") {
-        std::cout << "Extensão do arquivo de entrada não suportada (somente .asm)" << "\n";
+    if (extError)
         return -1;
+        
+    // verifica se os arquivos de entrada existem
+    bool openError = false;
+    for (unsigned int i = 0; i < inFileNames.size(); ++i) {
+        std::ifstream asmFile (inFileNames[i]);
+        if (!asmFile.is_open()) {
+            std::cout << "Erro ao abrir o arquivo de entrada " << inFileNames[i] << "\n";
+            openError = true;
+        } else
+            asmFile.close();
     }
-    
-    // verifica se as extensao do arquivo de saida eh .o
-    std::string outExt = outFileName.substr(outFileName.size() - 2);
-    if (outExt != ".o") {
-        std::cout << "Extensão do arquivo de saída não suportada (somente .o)" << "\n";
+    if (openError)
         return -1;
-    }
-    
-    // verifica se o arquivo de entrada existe
-    std::ifstream asmFile (inFileName);
-    if (!asmFile.is_open()) {
-        std::cout << "Erro ao abrir o arquivo de entrada: " << inFileName << "\n";
-        return -1;
-    } else
-        asmFile.close();
         
     // verifica se o arquivo com a lista de instrucoes existe
     std::ifstream instrFile (instrFileName);
@@ -84,35 +88,45 @@ int errorCheck (int argc, char *argv[], std::string instrFileName, std::string d
 
 
 /*
-o2pre: passa uma string com extensao '.o' para extensao '.pre'
-entrada: string com o nome original com a extensao '.o'
+asm2pre: passa uma string com extensao '.asm' para extensao '.pre'
+entrada: string com o nome original com a extensao '.asm'
 saida: string com o nome alterado com a extensao '.pre'
 */
-std::string o2pre (std::string original) {
+std::string asm2pre (std::string name) {
     
-    std::string altered (original);
+    name.erase(name.end()-3, name.end());
+    name.append("pre");
+    return name;
     
-    altered.pop_back();
-    altered.append("pre");
-    
-    return altered;
 }
 
 
 
 /*
-o2mcr: passa uma string com extensao '.o' para extensao '.mcr'
-entrada: string com o nome original com a extensao '.o'
+asm2mcr: passa uma string com extensao '.asm' para extensao '.mcr'
+entrada: string com o nome original com a extensao '.asm'
 saida: string com o nome alterado com a extensao '.mcr'
 */
-std::string o2mcr (std::string original) {
+std::string asm2mcr (std::string name) {
     
-    std::string altered (original);
+    name.erase(name.end()-3, name.end());
+    name.append("mcr");
+    return name;
+}
+
+
+
+/*
+asm2o: passa uma string com extensao '.asm' para extensao '.o'
+entrada: string com o nome original com a extensao '.asm'
+saida: string com o nome alterado com a extensao '.o'
+*/
+std::string asm2o (std::string name) {
     
-    altered.pop_back();
-    altered.append("mcr");
+    name.erase(name.end()-3, name.end());
+    name.append("o");
+    return name;
     
-    return altered;
 }
 
 
@@ -261,10 +275,10 @@ int labelCheck (std::string label, std::vector<Instr> &instrList, std::vector<Di
 
 /*
 reportList: reporta todos os erros, na ordem das linhas. mostra no terminal a mensagem de erro passada pelo programa, junto com o tipo de erro e a linha
-entrada: lista de erros
+entrada: lista de erros e nome do arquivo de entrada
 saida: nenhuma (erros no terminal)
 */
-void reportList (std::vector<Error> &errorList) {
+void reportList (std::vector<Error> &errorList, std::string fileName) {
     
     // configura algumas cores
     std::string escRed = "\033[31;1m",
@@ -286,11 +300,11 @@ void reportList (std::vector<Error> &errorList) {
         
         // para o caso de não ter linha específica
         if (error.lineNum == -1) {
-            std::cout << escRed << "Erro" << escReset << " no arquivo de entrada: " << escYellow << error.message << escReset << " (erro " << error.type << ")" << "\n\n";
+            std::cout << escRed << "Erro" << escReset << " no arquivo de entrada " << escGreen << fileName << escReset << ": " << escYellow << error.message << escReset << " (erro " << error.type << ")" << "\n\n";
         
         // quando tem linha específica
         } else {
-            std::cout << escRed << "Erro" << escReset << " na linha " << escRed << error.lineNum << escReset << " do arquivo de entrada: " << escYellow << error.message << escReset << " (erro " << error.type << ")" << "\n";
+            std::cout << escRed << "Erro" << escReset << " na linha " << escRed << error.lineNum << escReset << " no arquivo de entrada " << escGreen << fileName << escReset << ": " << escYellow << error.message << escReset << " (erro " << error.type << ")" << "\n";
             std::cout << "\t" << escBlue << error.line << escReset << "\n";
             std::cout << "\t" << offset << escGreen << "^" << escReset << "\n\n";
         }
