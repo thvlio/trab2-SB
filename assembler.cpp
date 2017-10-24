@@ -26,44 +26,46 @@ int main (int argc, char *argv[]) {
     std::vector<Dir> dirList = getDirList (dirFileName);
     
     // coloca os argumentos em strings
-    std::string operation ( *(argv+1) ),
-        inFileName ( *(argv+2) ),
-        outFileName ( *(argv+3) );
+    std::vector<std::string> inFileNames;
+    for (int i = 1; i < argc; ++i)
+        inFileNames.push_back(std::string(*(argv+i)));
     
-    // cria os nomes dos arquivos com as extensoes '.pre' e '.mcr'
-    std::string preFileName (o2pre(outFileName)),
-        mcrFileName (o2mcr(outFileName));
-    
-    // cria o dicionario de linhas para o preprocessamento, para a passagem de macros e o dicionario composto dos dois
+    // cria os dicionarios de linhas para o preprocessamento, para a passagem de macros e o dicionario composto dos dois
     // o indice representa a linha atual, e o valor no indice é a linha original
-    std::vector<int> lineDictPre;
-    std::vector<int> lineDictMcr;
-    std::vector<int> lineDict;
+    // um conjunto de tres dicionarios é criado para cada arquivo de entrada
+    std::vector< std::vector<int> > lineDictPre (argc-1);
+    std::vector< std::vector<int> > lineDictMcr (argc-1);
+    std::vector< std::vector<int> > lineDict (argc-1);
     
     // lista de erros a serem mostrados no final da execução
-    std::vector<Error> errorList;
+    // um vetor de erros para cada arquivo
+    std::vector< std::vector<Error> > errorList (argc-1);
     
-    // passagem de pre processamento
-    if (operation == "-p" || operation == "-m" || operation == "-o")
-        preProcessFile (inFileName, preFileName, lineDictPre, instrList, dirList, errorList);
-    
-    // passagem de macros
-    if (operation == "-m" || operation == "-o")
-        expandMacros (preFileName, mcrFileName, lineDictMcr, lineDictPre, instrList, dirList, errorList);
-    
-    // faz o dicionario "composto"
-    for (unsigned int i = 0; i < lineDictMcr.size(); ++i)
-        lineDict.push_back(lineDictPre[lineDictMcr[i]-1]);
-    
-    // passagem normal
-    if (operation == "-o")
-        assembleCode (mcrFileName, outFileName, lineDict, instrList, dirList, errorList);
-    
-    // coloca os erros na ordem, de acordo com o número da linha
-    std::sort (errorList.begin(), errorList.end());
+    // montagem de cada arquivo individualmente
+    for (unsigned int i = 0; i < inFileNames.size(); ++i) {
         
-    // mostra todos os erros no terminal
-    reportList (errorList);
+        // passagem de pre processamento
+        preProcessFile (inFileNames[i], asm2pre(inFileNames[i]), lineDictPre[i], instrList, dirList, errorList[i]);
+        
+        // passagem de macros
+        expandMacros (asm2pre(inFileNames[i]), asm2mcr(inFileNames[i]), lineDictMcr[i], lineDictPre[i], instrList, dirList, errorList[i]);
+        
+        // faz o dicionario "composto"
+        for (unsigned int j = 0; j < lineDictMcr.size(); ++j)
+            lineDict[i].push_back(lineDictPre[i][lineDictMcr[i][j]-1]);
+        
+        // passagem de montagem
+        assembleCode (asm2mcr(inFileNames[i]), asm2o(inFileNames[i]), lineDict[i], instrList, dirList, errorList[i]);
+        
+        // coloca os erros na ordem e mostra no terminal
+        std::sort (errorList[i].begin(), errorList[i].end());
+        reportList (errorList[i], inFileNames[i]);
+        
+        // deleta os arquivos .pre e .mcr
+        std::remove (asm2pre(inFileNames[i]).c_str());
+        std::remove (asm2mcr(inFileNames[i]).c_str());
+        
+    }
         
     return 0;
     
