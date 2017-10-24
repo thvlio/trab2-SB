@@ -3,54 +3,77 @@ Legenda:
     [----] -> não foi feito
     [++++] -> já foi feito
 
-Os identificadores de variáveis e rótulos são limitados em 100 caracteres e seguem as regras comuns do C, sendo compostos por letras, números ou o caractere _ (underscore) e com a restrição de que o primeiro caractere não pode ser um número.
-    [++++]
+==========================
+======== MONTADOR ========
+==========================
 
-O montador deve ser capaz de:
-    - NÂO ser sensível ao caso, podendo aceitar instruções/diretivas/rótulos em maiúsculas e minúsculas.
-        [++++]
-    - NÃO ter ordem fixa para as seções de TEXT e DATA, ou seja, as seções podem estar em qualquer ordem.
-        [++++]
-    - Gerar um arquivo de saída em formato TEXTO (mais detalhes serão descritos a seguir).
-        [++++]
-    - Desconsiderar as tabulações, quebras de linhas e espaços desnecessários em qualquer lugar do código.
-        [++++]
-    - A diretiva CONST deve aceitar números positivos e negativos (inteiros e hexadecimal).
-        [++++]
-    - Deve ser possível trabalhar com vetores (SPACE com operando, e usar operações do tipo> LABEL + número).
-        [++++]
-    - Capacidade de aceitar comentários indicados pelo símbolo ';'.
-        [++++]
-    - O comando COPY deve utilizar uma vírgula e um espaço entre os operandos (COPY A, B)
-        [++++]
-    - Ser capaz de aceitar MACROS (mais detalhes serão descritos a seguir).
-        [++++]
-    - Pode criar um rótulo, dar quebra de linha e continuar na linha depois (o rótulo seria equivalente a linha seguinte).
-        [++++]
-    - Identificar erros durante a montagem. Montando sempre o programa inteiro e mostrando na tela a(s) LINHA(s) e TIPO DOS ERROS (segundo a relação a seguir e indicar se é LÉXICO, SINTÁTICO OU SEMÂNTICO).
-        [++++]
+Modifique o seu trabalho anterior para realizar um montador que consiga trabalhar com códigos em módulos. Para isso, duas novas diretivas são necessárias: BEGIN e END, conforme a Tabela 1.
+    [----]
+
+O montador então deve receber de 1 a 3 programas de entrada, por argumento, um seguido do outro (ex.: ./montador prog1.asm prog2.asm prog3.asm).
+    [----]
+
+Se um único programa foi colocado então o mesmo NÃO deve ter as diretivas BEGIN e END.
+    [----]
+
+Se 2 ou 3 programas são definidos pelo usuário como entrada então as diretivas BEGIN e END são obrigatórias.
+    [----]
     
-O programa deve detectar pelo menos os seguintes tipos de erro:
-    - declarações e rótulos ausentes [++++]
-    - declarações e rótulos repetidos [++++]
-    - pulo para rótulos inválidos [++++]
-    - pulo para seção errada [++++]
-    - diretivas inválidas [++++]
-    - instruções inválidas [++++]
-    - diretivas ou instruções na seção errada [++++]
-    - divisão por zero (para constante) [++++]
-    - instruções com a quantidade de operandos inválida [++++]
-    - tokens inválidos [++++]
-    - dois rótulos na mesma linha [++++]
-    - seção TEXT faltante [++++]
-    - seção inválida [++++]
-    - tipo de argumento inválido [++++]
-    - modificação de um valor constante [++++]
+Este então é o único teste de erro que o montador deve fazer, todos os testes de erros, assim como a parte de MACROS, do trabalho anterior NÃO serão avaliados neste trabalho. A utilização de BEGIN e END deve seguir os slides de sala de aula.
+    [----]
+
+O montador deve então dar como saída de 1 a 3 arquivos objetos.
+    [----]
+
+Em todos eles deve existir um cabeçalho com pelo menos as seguintes informações:
+    nome do programa (pode ser o mesmo nome do arquivo) [----]
+    tamanho do código [----]
+    informação de realocação [----]
+
+O cabeçalho é identificado pela letra H, enquanto a letra T indica a parte do texto (código).
+    [----]
+
+Além disso, se necessário o cabeçalho deve também incluir a TABELA DE USO e TABELA DE DEFINIÇÕES. O formato da inclusão dessa tabela é livre, ou seja, o grupo pode escolher como incluir ela no arquivo. Porém, deve estar claramente identificada pelo rótulo TU e TD especificamente. Ou seja, deve ter uma ou mais linhas com esse rótulo, como a informação na tabela é armazenada pode ser decidido pelo grupo.
+    [----]
     
-Assumir que as macros vão sempre estar declaradas antes de serem chamadas e dentro da seção de texto. Assumir QUE NÃO TEM MACRO QUE CHAMA OUTRA MACRO. As macros NÃO precisam receber parâmetros (não será feito teste de macro utilizando parâmetro de entrada).
+Os arquivos de saída devem ser .o.
+    [----]
+    
+=========================
+======== LIGADOR ========
+=========================
 
-O programa de tradução deve ser receber 3 (três) argumentos em linha de comando (nessa ordem e OS ARQUIVOS COM EXTENSÃO): um tipo de operação, um arquivo de entrada contendo um programa em Asssembly no formato texto (extensão ".asm") na linguagem hopotética e um arquivo de saída (extensão ".o"). Os tipos de operação são (i) preprocessamento, indicado pelo argumento "-p", coloca a extensão ".pre" no arquivo e somente avalia as diretivas EQU e IF. (ii) processamento de macros, indicado pelo argumento "-m", coloca a extensão ".mcr" no arquivo e somente avalia as diretivas EQU e IF e substitue as MACROS. (iii) montagem, indicado pelo argumento "-o", coloca a extensão "-o", realiza a montagem do programa usando o PROCESSO DE PASSAGEM ÚNICA. Como pode ser visto a saída de um tipo de operação pode ser visto como a entrada da próxima, logo o programa pode por exemplo no tipo de operação de montagem, gerar três arquivos de saída.
+Realizar um programa ligador.c que recebe de 1 a 3 arquivos de objeto. Os arquivos de objeto de entrada serão a saída do montador da parte anterior do seu próprio montador.
+    [----]
+    
+A ordem de entrada dos programa define também a ordem que eles devem ser ligados.
+    [----]
+    
+O ligador deve então realizar o processo de ligação e dar como saída um único arquivo, onde as informações de cabeçalho devem ser unicamente:
+    nome do programa (pode ser o mesmo nome do primeiro arquivo objeto) [----]
+    tamanho do código [----]
+    informação de realocação [----]
+    
+O arquivo de saída não deve ter extensão.
+    [----]
+    
+============================
+======== CARREGADOR ========
+============================
 
-Assumir que EQU sempre vai vir no início do programa e foras das seções de Texto e Dados. Lembrar que pode ter EQU sem IF, mas assumir que IF sempre precisa de uma declaração de EQU anterior.
-
-Todos os arquivos de saída devem estar em formato TEXTO. No caso do arquivo objeto, o arquivo de saída deve ser somente os OPCODES e operando sem quebra de linha, nem endereço indicado, mas separados por espaço.
+Realizar um programa carregador.c que recebe como entrada um arquivo de saída do ligador da seção anterior e depois uma sequência de números. Exemplo: ./carregador prog1 5 12 3 7 4.
+    [----]
+    
+Inicialmente, este programa deve executar o código fazendo uma simulação (deve simular o código em funcionamento).
+    [----]
+    
+Após simular o funcionamento do programa, o carregador deve gerar um arquivo de saída de imagem de memória. Para isso, são utilizados os números que foram inseriso junto com o nome do arquivo pelo usuário. Seguindo o exemplo anterior (./carregador prog1 3 12 3 7 100 150 280):
+    O primeiro número indica a quantidade de CHUNKS de memória disponíveis neste momento, no caso 3.
+        [----]
+    Os próximos números indicam o tamanho em bytes de cada um desses chunks (no exemplo, 12, 3 e 7 bytes).
+        [----]
+    Os últimos números indicam o endereços inicial de cada chunk. O carregador então deve verificar se um desses chunks é suficiente para suportar o programa inteiro. Se não deve verificar se é possível então dividir o programa em diferentes chunks.
+        [----]
+    Caso não tenha como alocar o programa, mesmo dividindo, o carregador deve indicar uma mensagem de: "OUT OF MEMORY - YOUR PROGRAM WILL NOT BE LOADED".
+        [----]
+    Caso contrário, o carregador deve modificar a informação relativa para os endereços corretos e colocar o código final (sem cabeçalho) no arquivo de saída. O arquivo de saída deve ter extensão .im, e deve ter unicamente os códigos e valores que estariam em cada endereço de memória.
