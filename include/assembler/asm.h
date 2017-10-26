@@ -526,18 +526,18 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
                 pos = argPos;
                 
                 if (instr.name == "DIV") {
-                    if (labelList[found].isConst == 2)
+                    if (labelList[found].isConst == 2 && !labelList[found].isExtern)
                         return -3; // -3 indica divisao por zero
                 } else if (instr.name == "JMP" || instr.name == "JMPP" || instr.name == "JMPN" || instr.name == "JMPZ") {
-                    if (labelList[found].vectSize != 0) // vectSize = 0 indica que o rotulo é da seção de texto
+                    if (labelList[found].vectSize != 0 && !labelList[found].isExtern) // vectSize = 0 indica que o rotulo é da seção de texto
                         return -4; // -4 indica pulo para a seção de dados
                 } else if ((instr.name == "COPY" && i == 1) || instr.name == "STORE" || instr.name == "INPUT") {
-                    if (labelList[found].isConst != 0)
+                    if (labelList[found].isConst != 0 && !labelList[found].isExtern)
                         return -5; // -5 indica tentativa de modificar valor constante
                 }
                         
                 // o acesso a memoria não pode usar um rótulo da seção de texto
-                if (labelList[found].vectSize == 0 && instr.name != "JMP" && instr.name != "JMPP" && instr.name != "JMPN" && instr.name != "JMPZ")
+                if (labelList[found].vectSize == 0 && instr.name != "JMP" && instr.name != "JMPP" && instr.name != "JMPN" && instr.name != "JMPZ" && !labelList[found].isExtern)
                     return -14;
                 
                 pos = pos + token.size() + 1 + 1 + 1;
@@ -549,7 +549,7 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
                 }
                 
                 // checa se o tamanho do rotulo bate com o indice n (rotulo + n)
-                if (offset >= labelList[found].vectSize && labelList[found].vectSize > 0)
+                if (offset >= labelList[found].vectSize && labelList[found].vectSize > 0 && !labelList[found].isExtern)
                     return -(found+21); // retorna onde ta o rotulo
                 
                 pos = posBkp;
@@ -659,6 +659,8 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                 labelList[labelPos].isDefined = 1;
                 labelList[labelPos].vectSize = 0; // indica que é rotulo da area de texto (pode mudar se for chamada uma diretiva da área de dados)
                 labelList[labelPos].isConst = 0;
+                labelList[labelPos].isExtern = false;
+                labelList[labelPos].isPublic = false;
             }
             
             // nunca foi chamado nem definido (acrescenta novo rotulo definido)
@@ -669,6 +671,8 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                 label.isDefined = 1;
                 label.vectSize = 0;
                 label.isConst = 0;
+                label.isExtern = false;
+                label.isPublic = false;
                 labelList.push_back(label);
             }
             
@@ -783,6 +787,11 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                 errorList.push_back(Error("instruções devem estar na seção de texto", "semântico", lineDict[lineCounter-1], line, pos));
             }
             
+            // opcode é sempre absoluto, e se houverem codigos adicionais, sao sempre endereços relativos
+            bitMap.push_back('0');
+            for (unsigned int i = 1; i < partialMachineCode.size(); ++i)
+                bitMap.push_back('1');
+            
         // se for uma diretiva, faz uma função específica
         } else if (isDirective >= 0) {
             
@@ -833,7 +842,10 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                         pos += 2;
                     errorList.push_back(Error("SPACE deve estar na seção de dados", "semântico", lineDict[lineCounter-1], line, pos));
                 }
-                    
+                
+                // o conteúdo da reserva é sempre absoluto
+                for (unsigned int i = 0; i < partialMachineCode.size(); ++i)
+                    bitMap.push_back('0');                    
             
             // se for CONST, verifica o argumento e salva no código de máquina
             } else if (dir.name == "CONST") {
@@ -856,7 +868,43 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                         pos += 2;
                     errorList.push_back(Error("CONST deve estar na seção de dados", "semântico", lineDict[lineCounter-1], line, pos));
                 }
+                
+                // o valor da constante é absoluto
+                bitMap.push_back('0');   
                       
+            } else if (dir.name == "EXTERN") {
+                for (unsigned int i = 0, found = 0; i < labelList.size() && !found; ++i) {
+                    if (labelList[i].name == labelNameBackup) {
+                        found = 1;
+                        labelList[i].isExtern = true;
+                        labelList[i].isDefined = 1;
+                        labelList[i].value = 0;
+                    }
+                }
+                
+            } else if (dir.name == "PUBLIC") {
+                std::string token2;    
+                lineStream >> token2;      
+                
+                int alreadyMentioned = 0;
+                int labelPos = -1;
+                for (unsigned int i = 0; i < labelList.size(); ++i) {
+                    if (labelList[i].name == token2) {
+                        alreadyMentioned = 1;
+                        labelPos = i;
+                    }
+                }
+                
+                if (alreadyMentioned)
+                    labelList[labelPos].isPublic = true;
+                else {
+                    Label label;
+                    label.name = token2;
+                    label.isDefined = 0;
+                    label.isPublic = true;
+                    labelList.push_back(label);
+                }
+                
             }
         }
     }
@@ -947,18 +995,18 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
                 int argPos = labelList[i].posList[j];
                 
                 if (auxInfo == 1) { // é uma divisão
-                    if (labelList[i].isConst == 2)
+                    if (labelList[i].isConst == 2 && !labelList[i].isExtern)
                         errorList.push_back(Error ("divisão por zero", "semântico", origLine, lines[mcrLine-1], argPos));
                 } else if (auxInfo == 2) { // é um pulo
-                    if (labelList[i].vectSize != 0)
+                    if (labelList[i].vectSize != 0 && !labelList[i].isExtern)
                         errorList.push_back(Error ("pulo para seção inválida", "semântico", origLine, lines[mcrLine-1], argPos));
                 } else if (auxInfo == 3) { // tá modificando o rótulo
-                    if (labelList[i].isConst != 0)
+                    if (labelList[i].isConst != 0 && !labelList[i].isExtern)
                         errorList.push_back(Error ("valores constantes não podem ser modificados", "semântico", origLine, lines[mcrLine-1], argPos));
                 }
                 
                 // se não for pulo, não pode acessar a área de texto
-                if (labelList[i].vectSize == 0 && auxInfo != 2)
+                if (labelList[i].vectSize == 0 && auxInfo != 2 && !labelList[i].isExtern)
                     errorList.push_back(Error ("acesso à seção de texto só é permitido para pulos", "semântico", origLine, lines[mcrLine-1], argPos));
                 
                 argPos = argPos + labelList[i].name.size() + 1 + 1 + 1;
@@ -968,7 +1016,7 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
                     errorList.push_back(Error ("o deslocamento de pulos deve ser zero", "semântico", origLine, lines[mcrLine-1], argPos));
                 
                 // checa se o tamanho do rotulo bate com o indice n (rotulo + n)
-                if (offset >= labelList[i].vectSize && auxInfo != 2 && labelList[i].vectSize > 0)
+                if (offset >= labelList[i].vectSize && auxInfo != 2 && labelList[i].vectSize > 0 && !labelList[i].isExtern)
                     errorList.push_back(Error ("indíce excede o tamanho do vetor "+labelList[i].name, "semântico", origLine, lines[mcrLine-1], argPos));
                 
                 machineCode[address] = labelList[i].value+offset;
