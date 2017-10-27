@@ -982,15 +982,15 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     // escreve o cabeçalho no arquivo
     outFileName = outFileName.substr(0, outFileName.size() - 2);
     std::transform (outFileName.begin(), outFileName.end(), outFileName.begin(), ::toupper);
-    std::cout << "H: " << outFileName << "\n";
-    std::cout << "H: " << machineCode.size() << "\n";
-    std::cout << "H: " << bitMap << "\n";
+    outFile << "H: " << outFileName << "\n";
+    outFile << "H: " << machineCode.size() << "\n";
+    outFile << "H: " << bitMap << "\n";
     
     // escreve o codigo de maquina final no arquivo
-    std::cout << "T: ";
+    outFile << "T: ";
     for (unsigned int i = 0; i < machineCode.size(); ++i)
-        std::cout << machineCode[i] << " ";
-    std::cout << "\n";
+        outFile << machineCode[i] << " ";
+    outFile << "\n";
     
     mcrFile.close();
     outFile.close();

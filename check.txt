@@ -8,30 +8,23 @@ Legenda:
 ==========================
 
 Modifique o seu trabalho anterior para realizar um montador que consiga trabalhar com códigos em módulos. Para isso, duas novas diretivas são necessárias: BEGIN e END, conforme a Tabela 1.
-    [----]
 
 O montador então deve receber de 1 a 3 programas de entrada, por argumento, um seguido do outro (ex.: ./montador prog1.asm prog2.asm prog3.asm).
     [++++]
 
-Se um único programa foi colocado então o mesmo NÃO deve ter as diretivas BEGIN e END.
-    [----]
-
-Se 2 ou 3 programas são definidos pelo usuário como entrada então as diretivas BEGIN e END são obrigatórias.
-    [----]
-    
-Este então é o único teste de erro que o montador deve fazer, todos os testes de erros, assim como a parte de MACROS, do trabalho anterior NÃO serão avaliados neste trabalho. A utilização de BEGIN e END deve seguir os slides de sala de aula.
+Se um único programa foi colocado então o mesmo NÃO deve ter as diretivas BEGIN e END. Se 2 ou 3 programas são definidos pelo usuário como entrada então as diretivas BEGIN e END são obrigatórias. Este então é o único teste de erro que o montador deve fazer, todos os testes de erros, assim como a parte de MACROS, do trabalho anterior NÃO serão avaliados neste trabalho. A utilização de BEGIN e END deve seguir os slides de sala de aula.
     [----]
 
 O montador deve então dar como saída de 1 a 3 arquivos objetos.
     [++++]
 
 Em todos eles deve existir um cabeçalho com pelo menos as seguintes informações:
-    nome do programa (pode ser o mesmo nome do arquivo) [----]
-    tamanho do código [----]
-    informação de realocação [----]
+    nome do programa (pode ser o mesmo nome do arquivo) [++++]
+    tamanho do código [++++]
+    informação de realocação [++++]
 
 O cabeçalho é identificado pela letra H, enquanto a letra T indica a parte do texto (código).
-    [----]
+    [++++]
 
 Além disso, se necessário o cabeçalho deve também incluir a TABELA DE USO e TABELA DE DEFINIÇÕES. O formato da inclusão dessa tabela é livre, ou seja, o grupo pode escolher como incluir ela no arquivo. Porém, deve estar claramente identificada pelo rótulo TU e TD especificamente. Ou seja, deve ter uma ou mais linhas com esse rótulo, como a informação na tabela é armazenada pode ser decidido pelo grupo.
     [----]

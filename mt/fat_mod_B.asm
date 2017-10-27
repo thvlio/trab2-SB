@@ -11,3 +11,6 @@ SECTION TEXT
 SECTION DATA
 	AUX: SPACE
 END
+
+;codigo de maquina sem ligacao
+;11 10 3 0 11 0 10 10 5 0 0

@@ -14,3 +14,6 @@ SECTION DATA
 	N: SPACE
 	ONE: CONST 1
 END
+
+;codigo de maquina sem ligacao
+;12 13 10 13 2 14 8 10 5 0 13 13 14 0 1
