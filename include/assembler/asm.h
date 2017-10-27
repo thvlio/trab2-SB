@@ -501,8 +501,8 @@ int assembleInstr (Instr &instr, int &addrCounter, std::vector<int> &partialMach
             
         } else {
             
-            // se ta na tabela e nao ta definido, coloca mais uma pendencia
-            if (!labelList[found].isDefined) {
+            // se ta na tabela e nao ta definido ou é externo, coloca mais uma pendencia
+            if (!labelList[found].isDefined || labelList[found].isExtern) {
                 
                 if (instr.name == "DIV")
                     labelList[found].auxInfoList.push_back(1); // 1 indica instrucao de divisao
@@ -660,7 +660,8 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                 labelList[labelPos].vectSize = 0; // indica que é rotulo da area de texto (pode mudar se for chamada uma diretiva da área de dados)
                 labelList[labelPos].isConst = 0;
                 labelList[labelPos].isExtern = false;
-                labelList[labelPos].isPublic = false;
+                if (labelList[labelPos].isPublic != true)
+                    labelList[labelPos].isPublic = false;
             }
             
             // nunca foi chamado nem definido (acrescenta novo rotulo definido)
@@ -962,8 +963,16 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     if (sectionText == -1)
         errorList.push_back(Error ("seção texto é obrigatória", "semântico", -1, "", 0));
     
-    // resolve as listas de pendências (e reporta erros)
+    // resolve as listas de pendências (e reporta erros), e cria listas com os rotulos publicos e os rotulos externos
+    std::vector<Label> publicLabelList;
+    std::vector<Label> externLabelList;
     for (unsigned int i = 0; i < labelList.size(); ++i) {
+        
+        if (labelList[i].isPublic)
+            publicLabelList.push_back(labelList[i]);
+        
+        if (labelList[i].isExtern)
+            externLabelList.push_back(labelList[i]);
         
         if (!labelList[i].isDefined) { // rotulo nunca foi definido
             
@@ -1027,12 +1036,32 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
         
     }
     
+    // monta a tabela de uso
+    std::stringstream useTable;
+    useTable << externLabelList.size() << " ";
+    for (unsigned int i = 0; i < externLabelList.size(); ++i) {
+        useTable << externLabelList[i].name << " ";
+        useTable << externLabelList[i].pendList.size() << " ";
+        for (unsigned int j = 0; j < externLabelList[i].pendList.size(); ++j)
+            useTable << externLabelList[i].pendList[j] << " ";
+    }
+    
+    // monta a tabela de definições
+    std::stringstream defTable;
+    defTable << publicLabelList.size() << " ";
+    for (unsigned int i = 0; i < publicLabelList.size(); ++i) {
+        defTable << publicLabelList[i].name << " ";
+        defTable << publicLabelList[i].value << " ";
+    }
+    
     // escreve o cabeçalho no arquivo
     outFileName = outFileName.substr(0, outFileName.size() - 2);
     std::transform (outFileName.begin(), outFileName.end(), outFileName.begin(), ::toupper);
     outFile << "H: " << outFileName << "\n";
     outFile << "H: " << machineCode.size() << "\n";
     outFile << "H: " << bitMap << "\n";
+    outFile << "TU: " << useTable.str() << "\n";
+    outFile << "TD: " << defTable.str() << "\n";
     
     // escreve o codigo de maquina final no arquivo
     outFile << "T: ";

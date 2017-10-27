@@ -15,5 +15,8 @@ SECTION DATA
 	ONE: CONST 1
 END
 
-;codigo de maquina sem ligacao
-;12 13 10 13 2 14 8 10 5 0 13 13 14 0 1
+;codigo de maquina esperado sem ligacao
+;H: FAT_MOD_A
+;H: 15
+;H: 010101010101000
+;T: 12 13 10 13 2 14 8 10 5 0 13 13 14 0 1 
