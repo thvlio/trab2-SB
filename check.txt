@@ -27,7 +27,7 @@ O cabeçalho é identificado pela letra H, enquanto a letra T indica a parte do 
     [++++]
 
 Além disso, se necessário o cabeçalho deve também incluir a TABELA DE USO e TABELA DE DEFINIÇÕES. O formato da inclusão dessa tabela é livre, ou seja, o grupo pode escolher como incluir ela no arquivo. Porém, deve estar claramente identificada pelo rótulo TU e TD especificamente. Ou seja, deve ter uma ou mais linhas com esse rótulo, como a informação na tabela é armazenada pode ser decidido pelo grupo.
-    [----]
+    [++++]
     
 Os arquivos de saída devem ser .o.
     [++++]
