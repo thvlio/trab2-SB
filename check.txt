@@ -13,7 +13,7 @@ O montador então deve receber de 1 a 3 programas de entrada, por argumento, um 
     [++++]
 
 Se um único programa foi colocado então o mesmo NÃO deve ter as diretivas BEGIN e END. Se 2 ou 3 programas são definidos pelo usuário como entrada então as diretivas BEGIN e END são obrigatórias. Este então é o único teste de erro que o montador deve fazer, todos os testes de erros, assim como a parte de MACROS, do trabalho anterior NÃO serão avaliados neste trabalho. A utilização de BEGIN e END deve seguir os slides de sala de aula.
-    [----]
+    [++++]
 
 O montador deve então dar como saída de 1 a 3 arquivos objetos.
     [++++]

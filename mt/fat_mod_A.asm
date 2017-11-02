@@ -16,6 +16,8 @@ SECTION DATA
 END
 
 ;codigo de maquina esperado sem ligacao
+;TU: 1 MOD_B 1 9 
+;TD: 3 MOD_A 0 FAT 4 N 13 
 ;H: FAT_MOD_A
 ;H: 15
 ;H: 010101010101000
