@@ -7,8 +7,8 @@ int constCheck (std::string&, int&);
 int spaceCommand (std::stringstream&, std::string&, std::vector<int>&, int&, std::vector<Label>&, int&);
 int constCommand (std::stringstream&, std::string&, std::vector<int>&, int&, std::vector<Label>&, int&);
 int assembleInstr (Instr&, int&, std::vector<int>&, std::vector<Label>&, std::stringstream&, std::vector<Instr>&, std::vector<Dir>&, int&);
-std::vector<int> asmParser (std::ifstream&, std::vector<Label>&, int&, int&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&, int&, int&, std::vector<int>&, std::vector<std::string>&, std::vector<Error>&, std::string&);
-void assembleCode (std::string, std::string, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&,std::vector<Error>&);
+std::vector<int> asmParser (std::ifstream&, std::vector<Label>&, int&, int&, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&, int&, int&, std::vector<int>&, std::vector<std::string>&, std::vector<Error>&, std::string&, int, int&);
+void assembleCode (std::string, std::string, std::vector<int>&, std::vector<Instr>&, std::vector<Dir>&,std::vector<Error>&, int);
 
 
 
@@ -592,7 +592,7 @@ asmParser: traduz uma linha em código máquina
 entrada:
 saida: código de máquina parcial num vetor de inteiros
 */
-std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelList, int &lineCounter, int &addrCounter, std::vector<int> &lineDict, std::vector<Instr> &instrList, std::vector<Dir> &dirList, int &section, int &sectionText, std::vector<int> &addrDict, std::vector<std::string> &lines, std::vector<Error> &errorList, std::string &bitMap) {
+std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelList, int &lineCounter, int &addrCounter, std::vector<int> &lineDict, std::vector<Instr> &instrList, std::vector<Dir> &dirList, int &section, int &sectionText, std::vector<int> &addrDict, std::vector<std::string> &lines, std::vector<Error> &errorList, std::string &bitMap, int numFiles, int &beginFound) {
     
     std::vector<int> partialMachineCode;
     
@@ -906,6 +906,16 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                     labelList.push_back(label);
                 }
                 
+            } else if (dir.name == "BEGIN") {
+                for (unsigned int i = 0; i < labelList.size(); ++i) {
+                    if (labelList[i].name == labelNameBackup)
+                        labelList[i].isPublic = true;
+                }
+                if (numFiles == 1) {
+                    int pos = labelNameBackup.size()+1 + 1;
+                    errorList.push_back(Error("BEGIN não precisa ser usada quando só há um arquivo de entrada", "semântico", lineDict[lineCounter-1], line, pos));
+                }
+                beginFound = 1;
             }
         }
     }
@@ -927,7 +937,7 @@ assembleCode: faz a passagem de montagem no arquivo, que inclui:
 entrada: nome do arquivo de entrada '.mcr'
 saida: nome do arquivo de saida '.o'
 */
-void assembleCode (std::string mcrFileName, std::string outFileName, std::vector<int> &lineDict, std::vector<Instr> &instrList, std::vector<Dir> &dirList, std::vector<Error> &errorList) {
+void assembleCode (std::string mcrFileName, std::string outFileName, std::vector<int> &lineDict, std::vector<Instr> &instrList, std::vector<Dir> &dirList, std::vector<Error> &errorList, int numFiles) {
     
     std::ifstream mcrFile (mcrFileName);
     std::ofstream outFile (outFileName);
@@ -944,17 +954,22 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     int addrCounter = 0;
     int section = -1; // -1: nenhuma, 0: text, 1: data
     int sectionText = -1; // -1: não encontrou seção texto, 0: encontrou
+    int beginFound = 0;
     
     std::string bitMap; // mapa de bits para os endereços relativos
     
     while (!mcrFile.eof()) {
         
         // le o codigo de maquina parcial da linha
-        std::vector<int> partialMachineCode = asmParser(mcrFile, labelList, lineCounter, addrCounter, lineDict, instrList, dirList, section, sectionText, addrDict, lines, errorList, bitMap);
+        std::vector<int> partialMachineCode = asmParser(mcrFile, labelList, lineCounter, addrCounter, lineDict, instrList, dirList, section, sectionText, addrDict, lines, errorList, bitMap, numFiles, beginFound);
         
         // anexa os codigos parciais
         for (unsigned int i = 0; i < partialMachineCode.size(); ++i)
             machineCode.push_back(partialMachineCode[i]);
+            
+        // checa se achou a diretiva begin
+        if (beginFound == 0 && lineCounter == 1 && numFiles > 1)
+            errorList.push_back(Error("BEGIN precisa ser usada quando há dois ou três arquivos de entrada", "semântico", -1, "", 0));
         
         lineCounter++;
         
@@ -1057,11 +1072,11 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     // escreve o cabeçalho no arquivo
     outFileName = outFileName.substr(0, outFileName.size() - 2);
     std::transform (outFileName.begin(), outFileName.end(), outFileName.begin(), ::toupper);
+    outFile << "TU: " << useTable.str() << "\n";
+    outFile << "TD: " << defTable.str() << "\n";
     outFile << "H: " << outFileName << "\n";
     outFile << "H: " << machineCode.size() << "\n";
     outFile << "H: " << bitMap << "\n";
-    outFile << "TU: " << useTable.str() << "\n";
-    outFile << "TD: " << defTable.str() << "\n";
     
     // escreve o codigo de maquina final no arquivo
     outFile << "T: ";

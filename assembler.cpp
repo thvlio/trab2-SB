@@ -55,7 +55,7 @@ int main (int argc, char *argv[]) {
             lineDict[i].push_back(lineDictPre[i][lineDictMcr[i][j]-1]);
         
         // passagem de montagem
-        assembleCode (asm2mcr(inFileNames[i]), asm2o(inFileNames[i]), lineDict[i], instrList, dirList, errorList[i]);
+        assembleCode (asm2mcr(inFileNames[i]), asm2o(inFileNames[i]), lineDict[i], instrList, dirList, errorList[i], argc-1);
         
         // coloca os erros na ordem e mostra no terminal
         std::sort (errorList[i].begin(), errorList[i].end());
