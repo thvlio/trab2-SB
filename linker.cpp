@@ -1,3 +1,6 @@
+#include "include/assembler/types.h"
+#include "include/assembler/lkr.h"
+
 // compilar com
 // g++ -std=c++11 -Wall linker.cpp -o linker.out
 // ou entao com CTRL SHIFT B no VSCODE
