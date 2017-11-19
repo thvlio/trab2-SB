@@ -37,18 +37,18 @@ Os arquivos de saída devem ser .o.
 =========================
 
 Realizar um programa ligador.c que recebe de 1 a 3 arquivos de objeto. Os arquivos de objeto de entrada serão a saída do montador da parte anterior do seu próprio montador.
-    [****]
+    [++++]
     
 A ordem de entrada dos programa define também a ordem que eles devem ser ligados.
-    [****]
+    [++++]
     
 O ligador deve então realizar o processo de ligação e dar como saída um único arquivo, onde as informações de cabeçalho devem ser unicamente:
-    nome do programa (pode ser o mesmo nome do primeiro arquivo objeto) [****]
-    tamanho do código [----]
-    informação de realocação [----]
+    nome do programa (pode ser o mesmo nome do primeiro arquivo objeto) [++++]
+    tamanho do código [++++]
+    informação de realocação [++++]
     
 O arquivo de saída não deve ter extensão.
-    [----]
+    [++++]
     
 ============================
 ======== CARREGADOR ========
