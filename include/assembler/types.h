@@ -20,8 +20,7 @@ struct Dir;
 struct Label;
 struct Macro;
 struct Error;
-struct tDef;
-struct tUso;
+
 
 
 
@@ -101,26 +100,3 @@ struct Error {
     Error (std::string msg, std::string tp, int lnn, std::string ln, int ps=0): message(msg), type(tp), lineNum(lnn), line(ln), pos(ps) {};
 };
 
-// tDef: armazena uma definição de label 
-struct tDef {
-    // membros
-    std::string name; // nome do label
-    int valor; // valor do label
-    // metodos
-    // constroi a estrutura sem nada
-    tDef () {};
-    // constroi a estrutura a partir de uma string e o valor
-    tDef (std::string nm, int vl): name(nm), valor(vl) {};
-};
-
-// tUso: armazena o(s) endereco(s) do codigo que o label indica
-struct tUso {
-    // membros
-    std::string name; // nome do label
-    std::vector<int> listUso; // usos do label
-    // metodos
-    // constroi a estrutura sem nada
-    tUso () {};
-    // constroi a estrutura a partir de uma string e a lista
-    tUso (std::string nm, std::vector<int> lu): name(nm), listUso(lu) {};
-};
