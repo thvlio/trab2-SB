@@ -1,5 +1,5 @@
-#include "include/assembler/types.h"
-#include "include/assembler/lkr.h"
+#include "include/linker/types.h"
+#include "include/linker/lkr.h"
 
 // compilar com
 // g++ -std=c++11 -Wall linker.cpp -o linker.out
