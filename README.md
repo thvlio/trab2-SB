@@ -21,7 +21,18 @@ Exemplo de compilação e execução:
 * `./assembler.out -o bin1.asm bin2.asm bin3.asm`
 
 # Ligador
-.
+Para compilar, use:
+* g++ -std=c++11 -Wall linker.cpp `nome.out`
+* `nome.out`: o nome do arquivo executável (ex: `linker.out`)
+    
+Para executar, use:
+* `./nome` `xxx.o yyy.o zzz.o`
+* `./nome`: o nome dado ao executável (ex: `./main.out`)
+* `xxx.o yyy.o zzz.o`: nomes de 1 a 3 arquivos de entrada diferentes (ex: `bin1.o bin2.o bin3.o`)
+
+Exemplo de compilação e execução:
+* `g++ -std=c++11 -Wall linker.cpp linker.out`
+* `./linker.out bin1.o bin2.o bin3.o`
 
 # Carregador
 .
