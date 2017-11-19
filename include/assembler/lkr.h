@@ -1,0 +1,234 @@
+/*      LKR.H: funções relativas à ligação dos codigos objetos        */
+
+
+
+/*      DECLARAÇÕES DAS FUNÇÕES      */
+
+void mergeLines(std::string, int, std::string&, std::vector<int>&);
+void DefLoad (std::string, std::vector<tDef>&, int&);
+void linkerCode(std::vector<std::string>, std::vector<tDef>&, std::vector<int>, std::string, std::string, std::vector<int>);
+void UseLoad(std::vector<tUso>&, std::string, int);
+void oneObject (std::string);
+
+
+
+/*      DEFINIÇÕES DAS FUNÇÕES      */
+
+/*
+mergelines: junta o mapa de bits e os codigos maquina dos arquivos
+entrada: arquivos objeto, vetor de offsets, mapa de bits e codigos maquina
+saida: arquivo ligado
+*/
+void mergeLines(std::string inFileNames, int offset_vector, std::string &bitMap, std::vector<int> &machineCode){
+    
+        std::ifstream instrFile (inFileNames);
+    
+        std::string bitMapTemp;
+        int machineCodeTemp;    
+        std::string linha,
+                    token;
+    
+        // ignora as 4 primeiras linhas
+        getline(instrFile, linha);
+        getline(instrFile, linha);
+        getline(instrFile, linha);
+        getline(instrFile, linha);
+    
+        instrFile >> token; // ignora o H:
+        instrFile >> bitMapTemp; //recupera o mapa de bits
+    
+        bitMap += bitMapTemp; // se houver, concatena com o mapa de bits do arquivo anterior
+    
+        getline(instrFile, linha); // ignora o resto da linha do mapa de bits    
+    
+        instrFile >> token; // ignora o T:
+    
+        //preenche o vetor com o codigo maquina de todos os arquivos
+        for(unsigned int i = 0; i < bitMapTemp.size(); i++){
+    
+            instrFile >> machineCodeTemp;
+            
+            // se o valor nao for absoluto, soma-se o offset de endereco
+            if((bitMapTemp[i] == '0') || (machineCodeTemp == 0)){
+                machineCode.push_back(machineCodeTemp);
+            }
+            else{
+                machineCode.push_back(machineCodeTemp+offset_vector);
+            }
+        }    
+    }
+    
+    /*
+    linkerCode: gera o arquivo ligado
+    entrada: arquivos objeto, tabela de definições, vetor de offsets, mapa de bits e codigo maquina
+    saida: arquivo ligado
+    */
+    void linkerCode(std::vector<std::string> inFileNames, std::vector<tDef> &defTable, std::vector<int> offset_vector, std::string outFileName, std::string bitMap, std::vector<int> machineCode){
+    
+        // gera a tabela de uso 
+        std::vector<tUso> useTable;
+        for(unsigned int i = 0; i < inFileNames.size(); i++)
+            UseLoad(useTable, inFileNames[i], offset_vector[i]); 
+    
+        // abre o arquivo de saida
+        std::ofstream outFile (outFileName);
+    
+        std::transform (outFileName.begin(), outFileName.end(), outFileName.begin(), ::toupper);
+        outFile << "H: " << outFileName << '\n'; // coloca o nome do arquivo
+        outFile << "H: " << offset_vector[offset_vector.size()-1] << '\n'; // coloca o tamanho do programa
+        outFile << "H: " << bitMap << '\n'; // coloca o mapa de bits
+        outFile << "T: ";
+    
+        //std::cout << useTable.size() << '\n';
+    
+        // coloca o codigo maquina com os endereços ligados
+        for(unsigned int i = 0; i < useTable.size(); i++){
+    
+            std::string label = useTable[i].name; // pega a label da tabela de uso em sequencia
+            
+            int labelValue = 0;
+    
+            // procura na tabela de definicoes o valor do label
+            for(unsigned int j = 0; j < defTable.size(); j++){
+                
+                if(defTable[j].name == label){
+                    labelValue = defTable[j].valor;                
+                }      
+            }
+    
+            // substitui o valor correto nos enderecos indicados na tabela de uso, no codigo de maquina
+            for(unsigned int j = 0; j < useTable[i].listUso.size(); j++)
+                machineCode[useTable[i].listUso[j]] = labelValue;        
+    
+    
+        }
+        
+        // preenche o arquivo de saida com o codigo de maquina
+        for(unsigned int i = 0; i < machineCode.size(); i++)
+            outFile << machineCode[i] << " ";    
+    
+        outFile.close();
+    
+    }
+    
+    /*
+    UseLoad: constroi a tabela de uso
+    entrada: tabela de uso, tabela de uso extraido do arquivo objeto
+    saida: tabela de definições preenchida
+    */
+    void UseLoad(std::vector<tUso> &useTable, std::string inFileNames, int offset_vector){
+    
+        // abre o arquivo
+        std::ifstream instrFile (inFileNames);
+    
+        std::string token;
+        int num_labels=0;
+    
+        instrFile >> token; // ignora TU:
+    
+        instrFile >> num_labels; // recupera o numero de labels da tabela
+    
+        for(int i = 0; i < num_labels; i++){
+    
+            std::string name;
+            instrFile >> name; // recupera o nome da label
+    
+            int label_rep=0;
+            instrFile >> label_rep; // recupera a quantidade de vezes que o label aparece
+    
+            std::vector<int> listUso (label_rep);
+    
+            for(int i = 0; i < label_rep; i++){ // recupera as posições do label
+                instrFile >> listUso[i];
+                listUso[i]+=offset_vector;// soma o offset na posição
+            }
+    
+            //for (unsigned int i = 0; i < listUso.size(); i++)
+              //  std::cout << listUso[i] << '\n';
+    
+            // coloca o label na lista    
+            tUso label (name, listUso);
+            useTable.push_back(label);       
+    
+        }
+    
+        instrFile.close();
+    
+    }
+    
+    
+    /*
+    DefLoad: constroi a tabela de definições
+    entrada: arquivo objeto, tabela de definições 
+    saida: tabela de definições preenchida
+    */
+    void DefLoad (std::string inFileNames, std::vector<tDef> &defTable, int &offset){
+    
+        // abre o arquivo
+        std::ifstream instrFile (inFileNames);
+        
+        std::string token;
+        std::string linha;
+    
+        int num; // numero de labels na tabela
+    
+        getline(instrFile, linha); //ignora a primeira linha da tabela de uso
+        instrFile >> token;        //ignora o "TD:""
+        instrFile >> num;          //pega a quantidade de labels
+    
+        
+        for(int i=0; i<num ; i++){    
+            std::string name; // nome do label
+            int valor;  // valor do label
+    
+            instrFile >> name;
+            instrFile >> valor;
+    
+            valor += offset;
+    
+            // coloca o label na lista
+            tDef label (name, valor);
+            defTable.push_back(label);        
+        }
+    
+        getline(instrFile, linha); // ignora a linha TD
+        getline(instrFile, linha); // ignora o nome do modulo
+        instrFile >> token;        // ignora o H:
+        instrFile >> num;          // pega o tamanho do modulo para o offset
+        
+        offset += num;
+        
+        instrFile.close();
+    
+    }
+    
+    /*
+    oneObject: apaga as tabelas de uso e definições quando o usuario entra com apenas um arquivo
+    entrada: arquivo objeto 
+    saida: arquivo de saida
+    */
+    void oneObject (std::string inFileNames){
+    
+        std::ifstream instrFile (inFileNames);
+        
+        std::string outFileName = inFileNames;
+        outFileName = outFileName.substr(0, outFileName.size() - 2);
+        
+        std::ofstream outFile (outFileName);
+    
+        std::string linha;
+    
+        getline(instrFile,linha);
+        getline(instrFile,linha);
+    
+        while(!instrFile.eof()){
+            getline(instrFile,linha);
+            outFile << linha << '\n';
+        }
+    
+        std::cout << "\n\nnome do arquivo gerado: " << outFileName << "\n\n";
+    
+        instrFile.close();
+        outFile.close();
+    
+    }
