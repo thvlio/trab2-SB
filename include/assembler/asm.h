@@ -810,7 +810,8 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                 lineStream >> token2;
                 if (token2 == "TEXT") {
                     section = 0;
-                    sectionText = 0;
+                    if (sectionText == -1)
+                        sectionText = addrCounter; // coloca o endereço aqui
                 } else if (token2 == "DATA")
                     section = 1;
                 else {
@@ -1077,6 +1078,7 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     outFile << "H: " << outFileName << "\n";
     outFile << "H: " << machineCode.size() << "\n";
     outFile << "H: " << bitMap << "\n";
+    outFile << "H: " << sectionText << "\n";
     
     // escreve o codigo de maquina final no arquivo
     outFile << "T: ";
