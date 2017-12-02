@@ -6,15 +6,16 @@
 // ou entao com CTRL SHIFT B no VSCODE
 
 // rodar com
-// ./loader.out xxx
+// ./loader.out xxx nc tc1 .. tcn ec1 .. ecn
 
 int main (int argc, char *argv[]) {
     
-    std::string fileName; // nome do arquivo de entrada
+    // nome do arquivo de entrada
+    std::string fileName (std::string(*(argv+1))); 
     
-    // verifica se houve erros na chamada ao carregador
-    if (errorCheck (argc, argv, fileName) == -1)
-        return 0;
+    // armazenas as informações dos chunks
+    std::vector<Chunk> chunkList;
+    getChunks (argc, argv, chunkList);
     
     // dados contidos no arquivo
     int codeSize;
@@ -25,18 +26,17 @@ int main (int argc, char *argv[]) {
     // extrai as informações de cabeçalho e codigo maquina do arquivo
     getData (fileName, codeSize, bitMap, codeStart, machineCode);
     
-    /*
-    std::cout << "codeSize: " << codeSize << "\n";
-    std::cout << "bitMap: " << bitMap << "\n";
-    std::cout << "codeStart: " << codeStart << "\n";
-    std::cout << "machineCode: ";
-    for (unsigned int i = 0; i < machineCode.size(); ++i)
-        std::cout << machineCode[i] << " ";
-    std::cout << "(" << machineCode.size() << ")\n";
-    */
-    
     // simula a execucao do codigo
-    simulateCode (codeStart, machineCode);
+    // simulateCode (codeStart, machineCode);
+    
+    // determina em quantos chunks o código cabe
+    std::vector<Chunk> minChunkList;
+    int fit = fitCode (codeSize, chunkList, minChunkList);
+    
+    if (fit == -1)
+        std::cout << "OUT OF MEMORY - YOUR PROGRAM WILL NOT BE LOADED\n";
+    else
+        codeStart = fragmentCode (codeSize, bitMap, machineCode);
     
     return 0;
     

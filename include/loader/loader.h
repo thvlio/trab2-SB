@@ -3,39 +3,34 @@
 
 
 /*      DECLARAÇÕES DAS FUNÇÕES      */
-int errorCheck (int, char**, std::string&);
+void getChuks (int, char**, std::vector<Chunk>&);
 void getData (std::string, int&, std::string&, int&, std::vector<int>&);
 void simulateCode (int, std::vector<int>);
-
+bool operator< (const Chunk&, const Chunk&);
+int fitCode (int, std::vector<Chunk>&, std::vector<Chunk>&);
+int fragmentCode (int, std::string, std::vector<int>&);
 
 
 /*      DEFINIÇÕES DAS FUNÇÕES      */
 
 /*
-errorCheck: verifica a quantidade de argumentos dados e se o arquivo de entrada existe
-entrada: argc, argv e string para armazenar o nome do arquivo
-saída: inteiro indicando erro (0: sem erro, -1: erro) (nome do arquivo dado por referência)
+getChunks: armazena as informações sobre os chunks dados
+entrada: argc, argv e referência para a lista de chunks
+saída: nenhuma (lista de chunks dada por referência)
 */
-int errorCheck (int argc, char *argv[], std::string &fileName) {
+void getChunks (int argc, char *argv[], std::vector<Chunk> &chunkList) {
     
-    // verifica o numero de argumentos dados
-    if (argc != 2) {
-        std::cout << "Deve ser fornecido 1 arquivo de entrada. (" << argc-1 << " fornecidos)\n";
-        return -1;
+    // faz o tamanho da lista ser numero de chunks
+    int numChunks = stoi (std::string(*(argv + 2)));
+    
+    // cria a lista de chunks
+    for (int i = 0; i < numChunks; ++i) {
+        int size = stoi (std::string(*(argv + 3 + i)));
+        int start = stoi (std::string(*(argv + 3 + i + numChunks)));
+        Chunk tempChunk (start, size);
+        chunkList.push_back(tempChunk); 
     }
     
-    // guarda o argumento em uma string
-    fileName = std::string(*(argv+1));
-    
-    // verifica se o arquivo de entrada existe
-    std::ifstream file (fileName);
-    if (!file.is_open()) {
-        std::cout << "Erro ao abrir o arquivo de entrada " << fileName << "\n";
-        return -1;
-    } else
-        file.close();
-    
-    return 0;
 }
 
 /*
@@ -147,5 +142,63 @@ void simulateCode (int codeStart, std::vector<int> machineCode) {
         currAddr = nextAddr;        
         
     }
+    
+}
+
+/*
+operator<: overload do operador < para poder usar std::sort com os chunks
+entrada: duas structs do tipo Chunk
+saida: se o primeiro é menor que o segundo (compara os começos)
+*/
+bool operator< (const Chunk &A, const Chunk &B) {
+    return (A.start < B.start);
+}
+
+/*
+fitCode: determina em quantos chunks o código cabe, e quais são eles
+entrada: tamanho do código e referências para a lista original de chunks e para a lista de chunks minimos
+saida: se coube (0) ou não (-1) (lista de chunks minimos dada por referencia)
+*/
+int fitCode (int codeSize, std::vector<Chunk> &chunkList, std::vector<Chunk> &minChunkList) {
+    
+    int fit = -1;
+    
+    // reodena a lista com base no começo do chunk
+    std::sort (chunkList.begin(), chunkList.end()); 
+    
+    // será usado para determinar a menor soma de chunks em que o codigo caiba
+    int sum = std::numeric_limits<int>::max();
+    
+    do {
+        
+        // soma os chunks, na ordem da combinacao atual, pra ver se a soma cabe
+        for (unsigned int n = 0; n < chunkList.size(); ++n) {
+            
+            // soma os n primeiros chunks da combinacao
+            int tempSum = 0;
+            for (unsigned int i = 0; i < n+1; ++i)
+                tempSum += chunkList[i].size;
+            
+            // ve se o codigo cabe nessa soma de n chunks e se é menor que a soma minima
+            if (tempSum >= codeSize && tempSum < sum) {
+                fit = 0;
+                sum = tempSum;
+                minChunkList = chunkList; // salva a lista de chunks que resultou nessa soma minima
+                for (unsigned int i = 0; i < chunkList.size()-(n+1); ++i)
+                    minChunkList.pop_back();
+            }
+            
+        }
+        
+    } while (std::next_permutation(chunkList.begin(), chunkList.end()));
+    
+    return fit;
+    
+}
+
+/*
+fragmentCode: realoca o código nos chunks mínimos necessários
+*/
+int fragmentCode (int codeSize, std::string bitMap, std::vector<int> &machineCode) {
     
 }
