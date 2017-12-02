@@ -8,7 +8,7 @@ void getData (std::string, int&, std::string&, int&, std::vector<int>&);
 void simulateCode (int, std::vector<int>);
 bool operator< (const Chunk&, const Chunk&);
 int fitCode (int, std::vector<Chunk>&, std::vector<Chunk>&);
-int fragmentCode (int, std::string, std::vector<int>&);
+void fragmentCode (int, std::string, std::vector<int>&, std::vector<Chunk>&, int&);
 
 
 /*      DEFINIÇÕES DAS FUNÇÕES      */
@@ -129,11 +129,11 @@ void simulateCode (int codeStart, std::vector<int> machineCode) {
                 machineCode[machineCode[currAddr+1]] = acc;
                 break;
             case 12:    // INPUT
-                std::cout << ">> ";
+                std::cout << "\033[31;1m" << ">> " << "\033[0m";
                 std::cin >> machineCode[machineCode[currAddr+1]];
                 break;
             case 13:    // OUTPUT
-                std::cout << ">> " << machineCode[machineCode[currAddr+1]] << "\n";
+                std::cout << "\033[31;1m" << ">> " << "\033[0m" << machineCode[machineCode[currAddr+1]] << "\n";
                 break;
             case 14:    // STOP
                 break;
@@ -179,8 +179,8 @@ int fitCode (int codeSize, std::vector<Chunk> &chunkList, std::vector<Chunk> &mi
             for (unsigned int i = 0; i < n+1; ++i)
                 tempSum += chunkList[i].size;
             
-            // ve se o codigo cabe nessa soma de n chunks e se é menor que a soma minima
-            if (tempSum >= codeSize && tempSum < sum) {
+            // ve se o codigo cabe nessa soma de n chunks e se é menor que a soma minima. ou, se a soma for igual, verifica se o numero n de chunks é menor do que o da soma anterior
+            if (tempSum >= codeSize && (tempSum < sum || (tempSum == sum && (n+1) < minChunkList.size()))) {
                 fit = 0;
                 sum = tempSum;
                 minChunkList = chunkList; // salva a lista de chunks que resultou nessa soma minima
@@ -190,6 +190,7 @@ int fitCode (int codeSize, std::vector<Chunk> &chunkList, std::vector<Chunk> &mi
             
         }
         
+    // o laço itera entre todas as permutações possíveis da lista de chunks
     } while (std::next_permutation(chunkList.begin(), chunkList.end()));
     
     return fit;
@@ -197,8 +198,64 @@ int fitCode (int codeSize, std::vector<Chunk> &chunkList, std::vector<Chunk> &mi
 }
 
 /*
-fragmentCode: realoca o código nos chunks mínimos necessários
+fragmentCode: realoca o código no conjunto mínimo de chunks necessários determinado anteriormente
+entrada: tamanho do código, mapas de bits, código de máquina, conjunto de chunks mínimo e começo da seção de texto
+saída: nenhuma (altera o começo da seção de texto por referência)
 */
-int fragmentCode (int codeSize, std::string bitMap, std::vector<int> &machineCode) {
+void fragmentCode (int codeSize, std::string bitMap, std::vector<int> &machineCode, std::vector<Chunk> &minChunkList, int &codeStart) {
+    
+    // determina para qual chunk aponta o endereço e faz a realocação
+    for (int i = 0; i < codeSize; ++i) {
+        if (bitMap[i] == '1') {
+            int chunk = -1;
+            int totalSize = 0;
+            for (unsigned int n = 0; (n < minChunkList.size() && chunk == -1); ++n) {
+                totalSize += minChunkList[n].size;
+                if (machineCode[i] < totalSize)
+                    chunk = n;
+            }
+            machineCode[i] += minChunkList[chunk].start;
+        }
+    }
+    
+    // determina o novo começo da seção de texto
+    codeStart += minChunkList[0].start;
+    
+}
+
+/*
+displayChunks: mostra na tela como ficou a alocação do código
+entrada: código de máquina e lista de chunks
+saída: nenhuma (código no terminal)
+*/
+void displayChunks (std::vector<int> &machineCode, std::vector<Chunk> &minChunkList) {
+    
+    // configura algumas cores
+    std::string escRed = "\033[31;1m",
+    escGreen = "\033[32;1m",
+    escYellow = "\033[33;1m",
+    escBlue = "\033[34;1m",
+    escReset = "\033[0m";
+    
+    // mostra em quais chunks o programa será carregado
+    std::cout << "\nO programa será alocado nos chunks:\n\t" << escRed;
+    for (unsigned int i = 0; i < minChunkList.size(); ++i)
+        std::cout << minChunkList[i].start << "(" << minChunkList[i].size << ") ";
+    std::cout << escReset << "\n";
+    
+    // escreve o arquivo no terminal
+    std::cout << "\nImagem de memória:\n";
+    int n = 0;
+    int totalSize = minChunkList[0].size;
+    std::cout << escRed << "[" << minChunkList[0].start << "]: " << escReset;
+    for (int i = 0; i < (int)machineCode.size(); ++i) {
+        if (i == totalSize) {
+            n++;
+            std::cout << escRed << "[" << minChunkList[n].start << "]: " << escReset;
+            totalSize += minChunkList[n].size;
+        }
+        std::cout << machineCode[i] << " ";
+    }
+    std::cout << "\n";
     
 }

@@ -27,16 +27,28 @@ int main (int argc, char *argv[]) {
     getData (fileName, codeSize, bitMap, codeStart, machineCode);
     
     // simula a execucao do codigo
-    // simulateCode (codeStart, machineCode);
+    std::cout << "./" << fileName << "\n";
+    simulateCode (codeStart, machineCode);
     
     // determina em quantos chunks o código cabe
     std::vector<Chunk> minChunkList;
     int fit = fitCode (codeSize, chunkList, minChunkList);
     
-    if (fit == -1)
+    if (fit == -1) {
         std::cout << "OUT OF MEMORY - YOUR PROGRAM WILL NOT BE LOADED\n";
-    else
-        codeStart = fragmentCode (codeSize, bitMap, machineCode);
+        return 0;
+    }
+    
+    // fragmenta o código nos chunks dados
+    fragmentCode (codeSize, bitMap, machineCode, minChunkList, codeStart);
+    
+    // escreve a imagem de memória num arquivo .im
+    std::ofstream outFile (fileName + ".im");
+    for (unsigned int i = 0; i < machineCode.size(); ++i)
+        outFile << machineCode[i] << " ";
+    outFile.close();
+
+    displayChunks(machineCode, minChunkList);
     
     return 0;
     
