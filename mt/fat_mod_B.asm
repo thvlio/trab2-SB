@@ -15,7 +15,8 @@ END
 ;codigo de maquina esperado sem ligacao
 ;TU: 2 FAT 1 9 N 2 3 5 
 ;TD: 1 MOD_B 0 
-;H: MT/FAT_MOD_B
+;H: FAT_MOD_B
 ;H: 11
 ;H: 01010101010
+;H: 0
 ;T: 11 10 3 0 11 0 10 10 5 0 0 

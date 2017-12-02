@@ -30,7 +30,7 @@ int main (int argc, char *argv[]){
         for (unsigned int i = 0; i < (inFileNames[0].size() - 2); i++)
             outFileName.push_back(inFileNames[0][i]);
 
-        
+
         std::vector<tDef> defTable;
         int offset = 0;
         std::vector<int> offset_vector (3);   
@@ -39,17 +39,22 @@ int main (int argc, char *argv[]){
         for (int i = 0 ; i < (argc-1); i++){
             DefLoad(inFileNames[i], defTable, offset);     
             offset_vector[i+1] = offset;  //pega o offset de cada módulo            
-        }                  
+        }
+        
+        // gera a tabela de uso 
+        std::vector<tUso> useTable;
+        for(unsigned int i = 0; i < inFileNames.size(); i++)
+            UseLoad(useTable, inFileNames[i], offset_vector[i]);                   
         
         std::string bitMap;
         std::vector<int> machineCode;
 
         // junta os mapas de bits e os codigos de maquina
         for(int i = 0; i < (argc-1); i++)
-            mergeLines(inFileNames[i], offset_vector[i], bitMap, machineCode);           
-                   
+            mergeLines(inFileNames[i], offset_vector[i], bitMap, machineCode, useTable);
+        
         // liga o arquivo
-        linkerCode(inFileNames, defTable, offset_vector, outFileName, bitMap, machineCode);
+        linkerCode(inFileNames, defTable, useTable, offset_vector, outFileName, bitMap, machineCode);
         
         std::cout << "\narquivos ligados: " << (argc-1) << "\n\nnome do arquivo gerado: " << outFileName << "\n\n";
     

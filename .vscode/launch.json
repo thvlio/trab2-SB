@@ -2,16 +2,21 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch",
+            "name": "(gdb) Bash on Windows Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/main.out",
+            "program": "${workspaceFolder}/hello.out",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceRoot}",
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": true,
-            "MIMode": "gdb",
+            "pipeTransport": {
+                "debuggerPath": "/usr/bin/gdb",
+                "pipeProgram": "C:\\Windows\\sysnative\\bash.exe",
+                "pipeArgs": [],
+                "pipeCwd": ""
+            },
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",

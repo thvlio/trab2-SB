@@ -9,7 +9,7 @@
 // ou entao com CTRL SHIFT B no VSCODE
 
 // rodar com
-// ./assembler.out -w xxx.asm yyy.asm zzz.asm
+// ./assembler.out xxx.asm yyy.asm zzz.asm
 
 int main (int argc, char *argv[]) {
     
