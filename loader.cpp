@@ -35,7 +35,11 @@ int main (int argc, char *argv[]) {
     int fit = fitCode (codeSize, chunkList, minChunkList);
     
     if (fit == -1) {
-        std::cout << "OUT OF MEMORY - YOUR PROGRAM WILL NOT BE LOADED\n";
+        std::cout << "\033[31;1m" << "\nSem memória - o programa não será carregado!\n";
+        int totalMemory = 0;
+        for (unsigned int i = 0; i < chunkList.size(); ++i)
+            totalMemory += chunkList[i].size;
+        std::cout << "Memória requerida: " << machineCode.size() << ", memória disponível: " << totalMemory << "\033[0;1m" << "\n";        
         return 0;
     }
     

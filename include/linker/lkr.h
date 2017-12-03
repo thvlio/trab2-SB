@@ -92,7 +92,7 @@ void linkerCode(std::vector<std::string> inFileNames, std::vector<tDef> &defTabl
 
     std::transform (outFileName.begin(), outFileName.end(), outFileName.begin(), ::toupper);
     outFile << "H: " << outFileName << '\n'; // coloca o nome do arquivo
-    outFile << "H: " << offset_vector[offset_vector.size()-1] << '\n'; // coloca o tamanho do programa
+    outFile << "H: " << machineCode.size() << '\n'; // coloca o tamanho do programa
     outFile << "H: " << bitMap << '\n'; // coloca o mapa de bits
     outFile << "H: " << textOffset << "\n"; // começo da seção de texto do primeiro modulo
     outFile << "T: ";

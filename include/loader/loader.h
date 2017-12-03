@@ -129,7 +129,7 @@ void simulateCode (int codeStart, std::vector<int> machineCode) {
                 machineCode[machineCode[currAddr+1]] = acc;
                 break;
             case 12:    // INPUT
-                std::cout << "\033[31;1m" << ">> " << "\033[0m";
+                std::cout << "\033[34;1m" << ">> " << "\033[0m";
                 std::cin >> machineCode[machineCode[currAddr+1]];
                 break;
             case 13:    // OUTPUT
