@@ -5,7 +5,7 @@ Trabalho 2 de Software Básico - 2017/2
 Grupo:
 * Thúlio Noslen Silva Santos - 14/0164090
 * Daniel Amaral Ribeiro - 14/0135219
-* Guilherme Caetano Golçalves - 13/0112925
+* Guilherme Caetano Gonlçalves - 13/0112925
 
 # Montador
 Para compilar, use:
