@@ -3,7 +3,7 @@
 
 
 /*      DECLARAÇÕES DAS FUNÇÕES      */
-void getChuks (int, char**, std::vector<Chunk>&);
+void getChunks (int, char**, std::vector<Chunk>&);
 void getData (std::string, int&, std::string&, int&, std::vector<int>&);
 void simulateCode (int, std::vector<int>);
 bool operator< (const Chunk&, const Chunk&);
