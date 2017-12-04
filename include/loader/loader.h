@@ -31,6 +31,9 @@ void getChunks (int argc, char *argv[], std::vector<Chunk> &chunkList) {
         chunkList.push_back(tempChunk); 
     }
     
+    // reodena a lista com base no começo do chunk
+    std::sort (chunkList.begin(), chunkList.end()); 
+    
 }
 
 /*
@@ -82,6 +85,8 @@ void simulateCode (int codeStart, std::vector<int> machineCode) {
     
     // registrador acumulador
     int acc;
+    
+    std::cout << "\n";
     
     // enquanto não chegar na instrução STOP
     while (opcode != 14) {
@@ -163,9 +168,6 @@ int fitCode (int codeSize, std::vector<Chunk> &chunkList, std::vector<Chunk> &mi
     
     int fit = -1;
     
-    // reodena a lista com base no começo do chunk
-    std::sort (chunkList.begin(), chunkList.end()); 
-    
     // será usado para determinar a menor soma de chunks em que o codigo caiba
     int sum = std::numeric_limits<int>::max();
     
@@ -214,7 +216,8 @@ void fragmentCode (int codeSize, std::string bitMap, std::vector<int> &machineCo
                 if (machineCode[i] < totalSize)
                     chunk = n;
             }
-            machineCode[i] += minChunkList[chunk].start;
+            int corr = minChunkList[chunk].start - (totalSize - minChunkList[chunk].size);
+            machineCode[i] += corr;
         }
     }
     
@@ -238,23 +241,30 @@ void displayChunks (std::vector<int> &machineCode, std::vector<Chunk> &minChunkL
     escReset = "\033[0m";
     
     // mostra em quais chunks o programa será carregado
-    std::cout << "\nO programa será alocado nos chunks:\n\t" << escRed;
+    std::cout << escYellow << "\nO programa (" << machineCode.size() << " bytes) será alocado nos chunks:\n\t" << escReset;
+    std::string chunkMessage;
     for (unsigned int i = 0; i < minChunkList.size(); ++i)
-        std::cout << minChunkList[i].start << "(" << minChunkList[i].size << ") ";
-    std::cout << escReset << "\n";
+        chunkMessage += escRed + std::to_string(minChunkList[i].start) + " (" + std::to_string(minChunkList[i].size) + " bytes) " + escReset + "+ ";
+    chunkMessage.pop_back();
+    chunkMessage.pop_back();
+    std::cout << chunkMessage << "\n";
     
     // escreve o arquivo no terminal
-    std::cout << "\nImagem de memória:\n";
+    std::cout << escYellow << "\nImagem de memória:" << escReset;
     int n = 0;
     int totalSize = minChunkList[0].size;
-    std::cout << escRed << "[" << minChunkList[0].start << "]: " << escReset;
+    std::cout << escRed << "\n[" << minChunkList[0].start << "]: " << escReset;
     for (int i = 0; i < (int)machineCode.size(); ++i) {
         if (i == totalSize) {
             n++;
-            std::cout << escRed << "[" << minChunkList[n].start << "]: " << escReset;
+            std::cout << escRed << "\n[" << minChunkList[n].start << "]: " << escReset;
             totalSize += minChunkList[n].size;
         }
-        std::cout << machineCode[i] << " ";
+        std::cout << escGreen << machineCode[i] << escReset << " ";
+        if (i == (int)machineCode.size()-1) {
+            for (unsigned int j = 0; j < (totalSize-machineCode.size()); ++j)
+                std::cout << escBlue << "X " << escReset;
+        }
     }
     std::cout << "\n";
     

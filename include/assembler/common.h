@@ -299,8 +299,13 @@ void reportList (std::vector<Error> &errorList, std::string fileName) {
         for (int i = 0; i < error.pos; ++i)
             offset.push_back(' ');
         
+        // para quando é um warning, não um erro
+        if (error.lineNum == -2) {
+            std::cout << escBlue << "Warning" << escReset << " no arquivo de entrada " << escGreen << fileName << escReset << ": " << escYellow << error.message << escReset << " (erro " << error.type << ")" << "\n\n";
+        }
+        
         // para o caso de não ter linha específica
-        if (error.lineNum == -1) {
+        else if (error.lineNum == -1) {
             std::cout << escRed << "Erro" << escReset << " no arquivo de entrada " << escGreen << fileName << escReset << ": " << escYellow << error.message << escReset << " (erro " << error.type << ")" << "\n\n";
         
         // quando tem linha específica

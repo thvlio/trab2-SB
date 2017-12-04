@@ -9,6 +9,7 @@ void DefLoad (std::string, std::vector<tDef>&, int&);
 void linkerCode(std::vector<std::string>, std::vector<tDef>&, std::vector<tUso>&, std::vector<int>, std::string, std::string, std::vector<int>);
 void UseLoad(std::vector<tUso>&, std::string, int);
 void oneObject (std::string);
+int checkTables (std::vector<tDef>&, std::vector<tUso>&);
 
 
 
@@ -248,4 +249,46 @@ void oneObject (std::string inFileNames){
     instrFile.close();
     outFile.close();
 
+}
+
+/*
+checkTables: procura por erros de dupla definição e rótulos públicos sem definição
+entrada: tabela de definições e tabela de uso
+saída: indicação de erro (0: sem erro, -1; erro)
+*/
+int checkTables (std::vector<tDef> &defTable, std::vector<tUso> &useTable) {
+    
+    // configura algumas cores
+    std::string escRed = "\033[31;1m",
+    escGreen = "\033[32;1m",
+    escYellow = "\033[33;1m",
+    escBlue = "\033[34;1m",
+    escReset = "\033[0m";
+    
+    // verifica se há entradas duplicadas na tabela de definições
+    for (unsigned int i = 0; i < defTable.size(); ++i) {
+        for (unsigned int j = i+1; j < defTable.size(); ++j) {
+            if (defTable[i].name == defTable[j].name) {
+                std::cout << escRed << "\nErro" << escReset << ": " << escYellow << "o rótulo " << defTable[i].name << " foi definido mais de uma vez." << escReset << " (erro semântico)" << "\n\n";
+                return -1;
+            }
+        }
+    }
+        
+    // verifica se todos os rótulos públicos foram definidos
+    for (unsigned int i = 0; i < useTable.size(); ++i) {
+        bool found = false;
+        for (unsigned int j = 0; j < defTable.size(); ++j) {
+            if (useTable[i].name == defTable[j].name) {
+                found = true;
+            }
+        }
+        if (!found) {
+            std::cout << escRed << "\nErro" << escReset << ": " << escYellow << "o rótulo " << useTable[i].name << " não foi definido em nenhum arquivo." << escReset << " (erro semântico)" << "\n\n";
+            return -1;
+        }
+    }
+    
+    return 0;
+    
 }

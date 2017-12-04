@@ -812,9 +812,11 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                     section = 0;
                     if (sectionText == -1)
                         sectionText = addrCounter; // coloca o endereço aqui
-                } else if (token2 == "DATA")
+                } else if (token2 == "DATA") {
+                    //if (addrCounter == 0 && numFiles > 1)
+                    //    errorList.push_back(Error("rótulo de início do módulo está apontando para a seção de dados", "semântico", -2, line, 0));
                     section = 1;
-                else {
+                } else {
                     int pos = token.size()+1;
                     if (!labelNameBackup.empty())
                         pos += labelNameBackup.size()+1 + 1;
@@ -875,7 +877,8 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                 bitMap.push_back('0');   
                       
             } else if (dir.name == "EXTERN") {
-                for (unsigned int i = 0, found = 0; i < labelList.size() && !found; ++i) {
+                unsigned int i = 0;
+                for (int found = 0; i < labelList.size() && !found; ++i) {
                     if (labelList[i].name == labelNameBackup) {
                         found = 1;
                         labelList[i].isExtern = true;
@@ -883,7 +886,10 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                         labelList[i].value = 0;
                     }
                 }
-                
+                i--;
+                if (labelList[i].isPublic && labelList[i].isExtern)
+                    errorList.push_back(Error("rótulo "+labelList[i].name+" definido como público e externo simultaneamente", "semântico", -1, line, 0));
+                    
             } else if (dir.name == "PUBLIC") {
                 std::string token2;    
                 lineStream >> token2;      
@@ -897,9 +903,11 @@ std::vector<int> asmParser (std::ifstream &mcrFile, std::vector<Label> &labelLis
                     }
                 }
                 
-                if (alreadyMentioned)
+                if (alreadyMentioned) {
                     labelList[labelPos].isPublic = true;
-                else {
+                    if (labelList[labelPos].isPublic && labelList[labelPos].isExtern)
+                        errorList.push_back(Error("rótulo "+labelList[labelPos].name+" definido como público e externo simultaneamente", "semântico", -1, line, 0));
+                } else {
                     Label label;
                     label.name = token2;
                     label.isDefined = 0;
@@ -1066,6 +1074,10 @@ void assembleCode (std::string mcrFileName, std::string outFileName, std::vector
     std::stringstream defTable;
     defTable << publicLabelList.size() << " ";
     for (unsigned int i = 0; i < publicLabelList.size(); ++i) {
+        if (!publicLabelList[i].isDefined) {
+            std::string temp;
+            errorList.push_back(Error ("o rótulo "+publicLabelList[i].name+" não foi definido", "semântico", -1, temp, 0));
+        }
         defTable << publicLabelList[i].name << " ";
         defTable << publicLabelList[i].value << " ";
     }
