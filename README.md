@@ -1,4 +1,4 @@
-# trab1-SB
+# trab2-SB
 
 Trabalho 2 de Software Básico - 2017/2
 
