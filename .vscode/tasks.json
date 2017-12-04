@@ -4,7 +4,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "taskName": "Compilation (g++) [assembler.cpp]",
+            "label": "Compilation (g++) [assembler.cpp]",
             "type": "shell",
             "command": "g++",
             "args": [
@@ -18,7 +18,7 @@
             "problemMatcher": []
         },
         {
-            "taskName": "Compilation (g++) [linker.cpp]",
+            "label": "Compilation (g++) [linker.cpp]",
             "type": "shell",
             "command": "g++",
             "args": [
@@ -32,7 +32,7 @@
             "problemMatcher": []
         },
         {
-            "taskName": "Compilation (g++) [loader.cpp]",
+            "label": "Compilation (g++) [loader.cpp]",
             "type": "shell",
             "command": "g++",
             "args": [
@@ -41,6 +41,16 @@
                 "loader.cpp",
                 "-o",
                 "loader.out"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Compilation (g++) [all]",
+            "dependsOn": [
+                "Compilation (g++) [loader.cpp]",
+                "Compilation (g++) [linker.cpp]",
+                "Compilation (g++) [assembler.cpp]"
             ],
             "group": "build",
             "problemMatcher": []
