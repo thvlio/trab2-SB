@@ -9,7 +9,7 @@ Grupo:
 
 # Montador
 Para compilar, use:
-* g++ -std=c++11 -Wall assembler.cpp `nome.out`
+* g++ -std=c++11 -Wall assembler.cpp -o `nome.out`
 * `nome.out`: o nome do arquivo executável (ex: `assembler.out`)
     
 Para executar, use:
@@ -18,12 +18,12 @@ Para executar, use:
 * `xxx.asm yyy.asm zzz.asm`: nomes de 1 a 3 arquivos de entrada diferentes (ex: `bin1.asm bin2.asm bin3.asm`)
 
 Exemplo de compilação e execução:
-* `g++ -std=c++11 -Wall assembler.cpp assembler.out`
+* `g++ -std=c++11 -Wall assembler.cpp -o assembler.out`
 * `./assembler.out -o bin1.asm bin2.asm bin3.asm`
 
 # Ligador
 Para compilar, use:
-* g++ -std=c++11 -Wall linker.cpp `nome.out`
+* g++ -std=c++11 -Wall linker.cpp -o `nome.out`
 * `nome.out`: o nome do arquivo executável (ex: `linker.out`)
     
 Para executar, use:
@@ -32,12 +32,12 @@ Para executar, use:
 * `xxx.o yyy.o zzz.o`: nomes de 1 a 3 arquivos de entrada diferentes (ex: `bin1.o bin2.o bin3.o`)
 
 Exemplo de compilação e execução:
-* `g++ -std=c++11 -Wall linker.cpp linker.out`
+* `g++ -std=c++11 -Wall linker.cpp -o linker.out`
 * `./linker.out bin1.o bin2.o bin3.o`
 
 # Carregador
 Para compilar, use:
-* g++ -std=c++11 -Wall loader.cpp `nome.out`
+* g++ -std=c++11 -Wall loader.cpp -o `nome.out`
 * `nome.out`: o nome do arquivo executável (ex: `loader.out`)
     
 Para executar, use:
@@ -49,5 +49,5 @@ Para executar, use:
 * `end1 end2 ... endN`: endereços dos N chunks de memória disponíveis
 
 Exemplo de compilação e execução:
-* `g++ -std=c++11 -Wall loader.cpp loader.out`
-* `./loader.out -o bin1 3 5 15 7 100 150 190`
+* `g++ -std=c++11 -Wall loader.cpp -o loader.out`
+* `./loader.out bin1 3 5 15 7 100 150 190`
